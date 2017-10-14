@@ -21,6 +21,7 @@ class test( unittest.TestCase ):
     def test( self ):
         #Funções para inicialização do iperf cliente
         #Cada função representa um host 
+        #Falta aumentar o tempo de duração do teste do iperf de cada cliente (-t)
         def iperF2():
             print h2.cmd('iperf3 -c %s -p 5201 -u -b 20M -i 1 -t 240 &' % h1.IP())
             return iperF2
@@ -43,11 +44,13 @@ class test( unittest.TestCase ):
         #INICIALIZA A REDE COM A FUNÇÃO MININET
         net = Mininet( topo=None, controller=RemoteController, build=False )
         info('\n')
+        #Esse print net foi apenas para visualizar o que a variável "net" retorna :P. Não é, de fato, necessário
         print net, '<----- net '
-        #ADICIONA O CONTROLADOR
+        #ADICIONA O CONTROLADOR 
         c0 = net.addController( 'c0', ip='192.168.79.10', port=6633 )
         info('Adding Hosts\n\n')
         #CRIA OS HOSTS E SWITCHES
+        #Cada host possue um rede diferente e foi necessário adicionar uma rota padrão em cada um deles
         h1 = net.addHost( 'h1', ip='192.168.1.1/24', defaultRoute='via 192.168.1.1' )
         h2 = net.addHost( 'h2', ip='192.168.2.1/24', defaultRoute='via 192.168.2.1' )
         h3 = net.addHost( 'h3', ip='192.168.3.1/24', defaultRoute='via 192.168.3.1' )
@@ -74,8 +77,10 @@ class test( unittest.TestCase ):
         net.addLink( s2, s3, cls=TCLink, bw=100 )
         net.addLink( s1, s4, cls=TCLink, bw=100 )
         net.addLink( s4, s3, cls=TCLink, bw=100 )
+        
         #INICIA A EMULAÇÃO
         net.start()
+        
         #CONTADOR DE 30 SEGUNDOS PARA O PROTOCOLO STP
         info('\nwaiting 30sec\n' )
         info('*** converging ring topology\n\n')
@@ -84,9 +89,11 @@ class test( unittest.TestCase ):
             c+=1
             print(c)
             time.sleep(1)
+        
         #LISTA TODOS OS HOSTS E SEUS LINKS
         print (net.hosts)
-        #INICIA O MODO SERVIDOR NOS HOSTS h1 E h11
+        
+        #INICIA O MODO SERVIDOR NOS HOSTS h1 E h11 e os exibe na tela
         info('\n\n*** Starting Iper3 Server h1 and h11\n\n')
         print h1.cmd('iperf3 -s -p 5201 &') #h2 
         print h1.cmd('iperf3 -s -p 5203 &') #h3
@@ -95,19 +102,27 @@ class test( unittest.TestCase ):
         print h11.cmd( 'iperf3 -s -p 5204 &') #h33
         print h1.cmd('jobs')
         print h11.cmd ('jobs') 
+        
         #A EMULAÇÃO INICIA COM O TRÁFEGO DOS HOSTS h2 E h4 
         info('\n\n***Starting iperf3 clients on Host2 and Host4\n\n')
+        
+        #FUNÇÃO PARA INICIAR O IPERF NO H2
         iperF2()
         time.sleep(1)
         print h2.cmd('jobs')
+        
+        #FUNÇÃO PARA INICIAR O IPERF NO H4
         iperF4()
         time.sleep(1)
         print h4.cmd('jobs')
-        #PAUSA DE X SEGUNDOS PARA ADICIONAR GRÁFICOS NO CACTI
+        
+        #PAUSA DE X SEGUNDOS PARA ADICIONAR GRÁFICOS NO CACTI 
+        #*MODIFICAR
         sleep(10)
-        #info('\n\ns3_CPOR --- link down\n\n')
+        
         #TRATAMENTO DE EXCEÇÕES E MENU DE MANIPULAÇÃO DA TOPOLOGIA
-        makeTerm(h2)        
+        #ACHO QUE O TRY/EXECPT NÃO É NECESSÁRIO AQUI, 
+        #MAS EU ACHEI MASSA PQ DÁ UMA SENSAÇÃO DE PROGRAMA MAS SÓLIDO E RESISTENTE A FALHA KKKK
         try:
             info('Choose the action: \n\n')
             info('a: Start host h3 - s3_CPOR \n')
@@ -174,6 +189,7 @@ class test( unittest.TestCase ):
                 elif inputKey == 'h':
                     time.sleep(1)
                     info('\nhost-h2 (s2_FUNDAJ) DOWN\n')
+                    #PARTE QUE ME DEU MAIS DOR DE CABEÇA
                     print h2.cmd('killid="$(ps -eopid,cmd | egrep "*-p 5201 -u*" | cut -f1 -d " " | head -n 1)"')
                     time.sleep(1)
                     print h2.cmd('kill 9 $killid')
@@ -199,6 +215,7 @@ class test( unittest.TestCase ):
                 elif inputKey == 'l':
                     time.sleep(1)
                     info('\nhost-h33 (s3_CPOR) down\n')
+                    #PARTE QUE ME DEU MAIS DOR DE CABEÇA
                     print h33.cmd('killid="$(ps -eopid,cmd | egrep "*-p 5204 -u*" | cut -f1 -d " "  | head -n 1)"')
                     time.sleep(1)
                     print h33.cmd('kill 9 $killid')
@@ -217,6 +234,7 @@ class test( unittest.TestCase ):
                     inputKey = ''                   
         except ValueError:
             info('\n\nError: Input not recognized\n\n')
+            #PARA A EMULAÇAO
         net.stop()
     
 if __name__=='__main__':
