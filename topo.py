@@ -112,7 +112,7 @@ class test( unittest.TestCase ):
             iperF4()
             time.sleep(1)
             print h4.cmd('jobs')
-            makeTerm(h2) 
+             
             #PAUSA DE X SEGUNDOS PARA ADICIONAR GRÁFICOS NO CACTI
             sleep(10)
             
