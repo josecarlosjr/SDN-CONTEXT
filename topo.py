@@ -36,6 +36,7 @@ class test( unittest.TestCase ):
         
         def iperF33():
             print h33.cmd('iperf3 -c %s -p 5204 -u -b 5M -i 1 -t 240 &' % h11.IP())
+            return iperF33
         
         def iperF4():
             print h4.cmd('iperf3 -c %s -p 5205 -u -b 20M -i 1 -t 240 & ' % h1.IP())
