@@ -105,16 +105,16 @@ class test( unittest.TestCase ):
             print h11.cmd ('jobs') 
             
             #A EMULAÇÃO INICIA COM O TRÁFEGO DOS HOSTS h2 E h4 
-            info('\n\n***Starting iperf3 clients on Host2 and Host4\n\n')
-            iperF2()
-            time.sleep(1)
-            print h2.cmd('jobs')
-            iperF4()
-            time.sleep(1)
-            print h4.cmd('jobs')
+            #info('\n\n***Starting iperf3 clients on Host2 and Host4\n\n')
+            #iperF2()
+            #time.sleep(1)
+            #print h2.cmd('jobs')
+            #iperF4()
+            #time.sleep(1)
+            #print h4.cmd('jobs')
              
             #PAUSA DE X SEGUNDOS PARA ADICIONAR GRÁFICOS NO CACTI
-            sleep(10)
+            #sleep(10)
             
             #TRATAMENTO DE EXCEÇÕES E MENU DE MANIPULAÇÃO DA TOPOLOGIA
                     
@@ -131,9 +131,10 @@ class test( unittest.TestCase ):
                 info('i: Host-h2  (s2_FUNDAJ) up\n')
                 info('j: Host-h22 (s2_FUNDAJ) down\n')
                 info('l: Host-h33 (s3_CPOR) down\n')
-                info('m: Exit\n\n')
+                info('m: Host-h4 (s4_IFPE) up\n')
+                info('n: Exit\n\n')
                 inputKey = ''
-                while inputKey != 'm':
+                while inputKey != 'n':
                     inputKey = raw_input('Choose an option (just word): ')
                     if inputKey == 'a':
                         time.sleep(1)
@@ -225,6 +226,14 @@ class test( unittest.TestCase ):
                         print h33.cmd('jobs')
                         inputKey = ''
                     elif inputKey == 'm':
+                        time.sleep(1)
+                        info('\nhost-h4 (s4_IFPE) UP\n')
+                        iperF4()
+                        time.sleep(1)
+                        print h4.cmd('jobs')
+                        time.sleep(1)
+                        inputKey = ''
+                    elif inputKey == 'n':
                         time.sleep(1)
                         info('\n\n***Exit***\n\n')
                         break
