@@ -136,7 +136,7 @@ class test( unittest.TestCase ):
                 info('n: Exit\n\n')
                 inputKey = ''
                 while inputKey != 'n':
-                    inputKey = raw_input('Choose an option (just letter): ')
+                    inputKey = raw_input('Choose an option (just one letter): ')
                     if inputKey == 'a':
                         time.sleep(1)
                         iperF3()
