@@ -240,7 +240,7 @@ class test( unittest.TestCase ):
                         break
                     else:
                         time.sleep(1)
-                        info('\n\n--Unrecognized option, Repeat--\n\n')
+                        info('\n\n--Option not recognized, Repeat--\n\n')
                         inputKey = ''                   
             except KeyboardInterrupt:
                 print '\n\nDont use Ctrl+C, Use option "m" for exit\n\n'
