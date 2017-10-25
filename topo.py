@@ -26,6 +26,10 @@ class test( unittest.TestCase ):
             print h2.cmd('iperf3 -c %s -p 5201 -u -b 20M -i 1 -t 86400 &' % h1.IP())
             return iperF2
 
+        def iperF2m():
+            print h2.cmd('iperf3 -c %s -p 5201 -u -b 15M -i 1 -t 86400 &' % h1.IP())
+            return iperF2m
+
         def iperF22():
             print h22.cmd('iperf3 -c %s -p 5202 -u -b 40M -i 1 -t 86400 &' % h11.IP())
             return iperF22
@@ -131,15 +135,16 @@ class test( unittest.TestCase ):
                 info('b: Link s2_FUNDAJ/s1_POP down\n')
                 info('c: Link s2_FUNDAJ/s3_CPOR up\n')
                 info('d: Link s2_FUNDAJ/s3_CPOR down\n')
-                info('e: Start host3 - s3_CPOR \n')
-                info('f: Start host22 - s2_FUNDAJ \n')
-                info('g: Shutdown host22 (s2_FUNDAJ) down')
-                info('h: Start host2  (s2_FUNDAJ) up\n')
-                info('i: Shutdown host2 (s2_FUNDAJ) down\n')
-                info('j: Start host33 - s3_CPOR \n')
-                info('l: Shutdown host33 (s3_CPOR) down\n')
-                info('m: Start host4 (s4_IFPE) up\n')
-                info('n: Exit\n\n')
+                info('e: Start host3 5Mb s3_CPOR \n')
+                info('f: Start host22 25Mb s2_FUNDAJ\n')
+                info('g: Shutdown host22 s2_FUNDAJ\n ')
+                info('h: Start host2 20Mb s2_FUNDAJ\n')
+                info('i: Start host 2 15Mb ')
+                info('j: Shutdown host2 s2_FUNDAJ\n')
+                info('l: Start host33 5Mb s3_CPOR\n')
+                info('m: Shutdown host33 s3_CPOR\n')
+                info('n: Start host4 20Mb s4_IFPE\n')
+                info('o: Exit\n\n')
                 inputKey = ''
                 while inputKey != 'n':
                     inputKey = raw_input('Choose an option (just one letter): ')
@@ -184,7 +189,7 @@ class test( unittest.TestCase ):
                         inputKey = ''
                     elif inputKey == 'g':
                         time.sleep(1)
-                        info('\nhost-h22 (s2_FUNDAJ) down\n')
+                        info('\n*** host-h22 down ***\n')
                         print h22.cmd('killid="$(ps -eopid,cmd | egrep "*-p 5202 -u*" | cut -f1 -d " " | head -n 1)"')
                         time.sleep(1)
                         print h22.cmd('kill 9 $killid')
@@ -196,7 +201,7 @@ class test( unittest.TestCase ):
                         inputKey = ''
                     elif inputKey == 'h':
                         time.sleep(1)
-                        info('\nhost-h2 (s2_FUNDAJ) UP\n')
+                        info('\n*** host-h2 UP ***\n')
                         iperF2()
                         time.sleep(1)
                         print h2.cmd('jobs')
@@ -204,7 +209,15 @@ class test( unittest.TestCase ):
                         inputKey = ''
                     elif inputKey == 'i':
                         time.sleep(1)
-                        info('\nhost-h2 (s2_FUNDAJ) DOWN\n')
+                        info('\n*** Starting h2 15Mb UP ***\n')
+                        iperF2m()
+                        time.sleep(1)
+                        print h2.cmd('jobs')
+                        time.sleep(1)
+                        inputKey = ''
+                    elif inputKey == 'j':
+                        time.sleep(1)
+                        info('\n*** host-h2 DOWN ***\n')
                         print h2.cmd('killid="$(ps -eopid,cmd | egrep "*-p 5201 -u*" | cut -f1 -d " " | head -n 1)"')
                         time.sleep(1)
                         print h2.cmd('kill 9 $killid')
@@ -213,15 +226,15 @@ class test( unittest.TestCase ):
                         time.sleep(1)
                         print h2.cmd('jobs')
                         inputKey = ''
-                    elif inputKey == 'j':
+                    elif inputKey == 'l':
                         time.sleep(1)
-                        info('\n***Starting h33***\n')
+                        info('\n*** Starting h33 ***\n')
                         iperF33()
                         time.sleep(1)
                         print h33.cmd('jobs')
                         time.sleep(1)
                         inputKey = ''
-                    elif inputKey == 'l':
+                    elif inputKey == 'm':
                         time.sleep(1)
                         info('\nhost-h33 (s3_CPOR) down\n')
                         print h33.cmd('killid="$(ps -eopid,cmd | egrep "*-p 5204 -u*" | cut -f1 -d " " | head -n 1)"')
@@ -232,15 +245,15 @@ class test( unittest.TestCase ):
                         time.sleep(1)
                         print h33.cmd('jobs')
                         inputKey = ''
-                    elif inputKey == 'm':
+                    elif inputKey == 'n':
                         time.sleep(1)
-                        info('\nhost-h4 (s4_IFPE) UP\n')
+                        info('\n*** Starting h4 ***\n')
                         iperF4()
                         time.sleep(1)
                         print h4.cmd('jobs')
                         time.sleep(1)
                         inputKey = ''
-                    elif inputKey == 'n':
+                    elif inputKey == 'o':
                         time.sleep(1)
                         info('\n\n***Exit***\n\n')
                         break
@@ -249,7 +262,7 @@ class test( unittest.TestCase ):
                         info('\n\n--Option not recognized, Repeat--\n\n')
                         inputKey = ''
             except KeyboardInterrupt:
-                print '\n\nDont use Ctrl+C, Use option "m" for exit\n\n'
+                print '\n\nDont use Ctrl+C, Use option "o" for exit\n\n'
                 #continue
             except EOFError:
                 print '\n\nEOF detected: This program doesnt support EOF ending emulation...\n\n'
@@ -262,6 +275,6 @@ if __name__=='__main__':
     setLogLevel('info')
     #setLogLevel('debug')
     #setLogLevel('output')
-    unittest.main(
+    unittest.main()
     
 
