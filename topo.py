@@ -135,15 +135,15 @@ class test( unittest.TestCase ):
                 info('b: Link s2_FUNDAJ/s1_POP down\n')
                 info('c: Link s2_FUNDAJ/s3_CPOR up\n')
                 info('d: Link s2_FUNDAJ/s3_CPOR down\n')
-                info('e: Start host3 5Mb s3_CPOR \n')
-                info('f: Start host22 25Mb s2_FUNDAJ\n')
-                info('g: Shutdown host22 s2_FUNDAJ\n ')
-                info('h: Start host2 20Mb s2_FUNDAJ\n')
-                info('i: Start host 2 15Mb ')
-                info('j: Shutdown host2 s2_FUNDAJ\n')
-                info('l: Start host33 5Mb s3_CPOR\n')
-                info('m: Shutdown host33 s3_CPOR\n')
-                info('n: Start host4 20Mb s4_IFPE\n')
+                info('e: Start host3 - s3_CPOR \n')
+                info('f: Start host22 - s2_FUNDAJ \n')
+                info('g: Shutdown host22 \n')
+                info('h: Start host2 20Mb - FUNDAJ\n')
+                info('i: Start host2 15Mb - FUNDAJ\n')
+                info('j: Shutdown host2\n')
+                info('l: Start host33 - CPOR\n')
+                info('m: Shutdown host33 \n')
+                info('n: Start host4 - IFPE\n')
                 info('o: Exit\n\n')
                 inputKey = ''
                 while inputKey != 'n':
@@ -183,13 +183,13 @@ class test( unittest.TestCase ):
                         time.sleep(1)
                         iperF22()
                         time.sleep(1)
-                        info('\n***Starting h22***\n')
+                        info('\n***Starting h22 25Mb ***\n')
                         print h22.cmd('jobs')
                         time.sleep(1)
                         inputKey = ''
                     elif inputKey == 'g':
                         time.sleep(1)
-                        info('\n*** host-h22 down ***\n')
+                        info('\nhost-h22 (s2_FUNDAJ) down\n')
                         print h22.cmd('killid="$(ps -eopid,cmd | egrep "*-p 5202 -u*" | cut -f1 -d " " | head -n 1)"')
                         time.sleep(1)
                         print h22.cmd('kill 9 $killid')
@@ -201,7 +201,7 @@ class test( unittest.TestCase ):
                         inputKey = ''
                     elif inputKey == 'h':
                         time.sleep(1)
-                        info('\n*** host-h2 UP ***\n')
+                        info('\n*** Starting host2 20Mb ***\n')
                         iperF2()
                         time.sleep(1)
                         print h2.cmd('jobs')
@@ -209,7 +209,7 @@ class test( unittest.TestCase ):
                         inputKey = ''
                     elif inputKey == 'i':
                         time.sleep(1)
-                        info('\n*** Starting h2 15Mb UP ***\n')
+                        info('\n*** Starting h2 15Mb ***\n')
                         iperF2m()
                         time.sleep(1)
                         print h2.cmd('jobs')
@@ -217,7 +217,7 @@ class test( unittest.TestCase ):
                         inputKey = ''
                     elif inputKey == 'j':
                         time.sleep(1)
-                        info('\n*** host-h2 DOWN ***\n')
+                        info('\nhost-h2 DOWN\n')
                         print h2.cmd('killid="$(ps -eopid,cmd | egrep "*-p 5201 -u*" | cut -f1 -d " " | head -n 1)"')
                         time.sleep(1)
                         print h2.cmd('kill 9 $killid')
@@ -228,7 +228,7 @@ class test( unittest.TestCase ):
                         inputKey = ''
                     elif inputKey == 'l':
                         time.sleep(1)
-                        info('\n*** Starting h33 ***\n')
+                        info('\n***Starting h33 5Mb ***\n')
                         iperF33()
                         time.sleep(1)
                         print h33.cmd('jobs')
@@ -236,7 +236,7 @@ class test( unittest.TestCase ):
                         inputKey = ''
                     elif inputKey == 'm':
                         time.sleep(1)
-                        info('\nhost-h33 (s3_CPOR) down\n')
+                        info('\nhost-h33 down\n')
                         print h33.cmd('killid="$(ps -eopid,cmd | egrep "*-p 5204 -u*" | cut -f1 -d " " | head -n 1)"')
                         time.sleep(1)
                         print h33.cmd('kill 9 $killid')
@@ -247,7 +247,7 @@ class test( unittest.TestCase ):
                         inputKey = ''
                     elif inputKey == 'n':
                         time.sleep(1)
-                        info('\n*** Starting h4 ***\n')
+                        info('\n***Starting hos4 20Mb ***\n')
                         iperF4()
                         time.sleep(1)
                         print h4.cmd('jobs')
