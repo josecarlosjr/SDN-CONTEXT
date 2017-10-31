@@ -23,26 +23,26 @@ class test( unittest.TestCase ):
         #Cada função representa um host
         #Falta aumentar o tempo de duração do teste do iperf de cada cliente (-t)
         def iperF2():
-            print h2.cmd('iperf3 -c %s -p 5201 -u -b 20M -i 1 -t 86400 &' % h1.IP())
+            print h2.cmd('nohup iperf3 -c %s -p 5201 -u -b 20M -i 1 -t 86400 &' % h1.IP())
             return iperF2
 
         def iperF2m():
-            print h2.cmd('iperf3 -c %s -p 5201 -u -b 15M -i 1 -t 86400 &' % h1.IP())
+            print h2.cmd('nohup iperf3 -c %s -p 5201 -u -b 15M -i 1 -t 86400 &' % h1.IP())
             return iperF2m
 
         def iperF22():
-            print h22.cmd('iperf3 -c %s -p 5202 -u -b 40M -i 1 -t 86400 &' % h11.IP())
+            print h22.cmd('nohup iperf3 -c %s -p 5202 -u -b 40M -i 1 -t 86400 &' % h11.IP())
             return iperF22
 
         def iperF3():
-            print h3.cmd('iperf3 -c %s -p 5203 -u -b 5M -i 1 -t 86400 &' % h1.IP())
+            print h3.cmd('nohup iperf3 -c %s -p 5203 -u -b 5M -i 1 -t 86400 &' % h1.IP())
             return iperF3
 
         def iperF33():
-            print h33.cmd('iperf3 -c %s -p 5204 -u -b 5M -i 1 -t 86400 &' % h11.IP())
+            print h33.cmd('nohup iperf3 -c %s -p 5204 -u -b 5M -i 1 -t 86400 &' % h11.IP())
 
         def iperF4():
-            print h4.cmd('iperf3 -c %s -p 5205 -u -b 20M -i 1 -t 86400 & ' % h1.IP())
+            print h4.cmd('nohup iperf3 -c %s -p 5205 -u -b 20M -i 1 -t 86400 & ' % h1.IP())
             return iperF4
 
         #INICIALIZA A REDE COM A FUNÇÃO MININET
@@ -99,22 +99,31 @@ class test( unittest.TestCase ):
             print (net.hosts)
 
             #INICIA O MODO SERVIDOR NOS HOSTS h1 E h11
-            info('\n\n*** Starting Iper3 Server h1 and h11\n\n')
-            print h1.cmd('iperf3 -s -p 5201 &') #h2
+            info('\n\n*** Starting IperF3 Server h1 and h11\n\n')
+            info('Server h1\n')
+            info('---------------------\n')
+            print h1.cmd('iperf3 -s -p 5201 -D') #h2
             time.sleep(1)
-            print h1.cmd('iperf3 -s -p 5203 &') #h3
+            print h1.cmd('ps -eopid,cmd | egrep "*iperf3 -s -p 5201 -D" | head -n 1')
             time.sleep(1)
-            print h1.cmd('iperf3 -s -p 5205 &') #h4
+            print h1.cmd('iperf3 -s -p 5203 -D') #h3
             time.sleep(1)
-            print h11.cmd('iperf3 -s -p 5202 &') #h22
+            print h1.cmd('ps -eopid,cmd | egrep "*iperf3 -s -p 5203 -D" | head -n 1')
             time.sleep(1)
-            print h11.cmd( 'iperf3 -s -p 5204 &') #h33
+            print h1.cmd('iperf3 -s -p 5205 -D') #h4
             time.sleep(1)
-            print h1.cmd('jobs')
+            print h1.cmd('ps -eopid,cmd | egrep "*iperf3 -s -p 5205 -D" | head -n 1')
             time.sleep(1)
-            print h11.cmd ('jobs')
-
-
+            info('\nServer h11\n')
+            info('----------------------\n')
+            print h11.cmd('iperf3 -s -p 5202 -D') #h22
+            time.sleep(1)
+            print h11.cmd('ps -eopid,cmd | egrep "*iperf3 -s -p 5201 -D" | head -n 1')
+            time.sleep(1)
+            print h11.cmd( 'iperf3 -s -p 5204 -D') #h33
+            time.sleep(1)
+            print h11.cmd('ps -eopid,cmd | egrep "*iperf3 -s -p 5204 -D" | head -n 1')
+            
             #A EMULAÇÃO INICIA COM O TRÁFEGO DOS HOSTS h2 E h4
             #info('\n\n***Starting iperf3 clients on Host2 and Host4\n\n')
             #iperF2()
@@ -190,7 +199,7 @@ class test( unittest.TestCase ):
                     elif inputKey == 'g':
                         time.sleep(1)
                         info('\nhost-h22 (s2_FUNDAJ) down\n')
-                        print h22.cmd('killid="$(ps -eopid,cmd | egrep "*-p 5202 -u*" | cut -f1 -d " " | head -n 1)"')
+                        print h22.cmd('killid="$(ps -eopid,cmd | egrep "*-p 5202 -u *" | cut -f2 -d " " | head -n 1)"')
                         time.sleep(1)
                         print h22.cmd('kill 9 $killid')
                         time.sleep(1)
@@ -218,7 +227,7 @@ class test( unittest.TestCase ):
                     elif inputKey == 'j':
                         time.sleep(1)
                         info('\nhost-h2 DOWN\n')
-                        print h2.cmd('killid="$(ps -eopid,cmd | egrep "*-p 5201 -u*" | cut -f1 -d " " | head -n 1)"')
+                        print h2.cmd('killid="$(ps -eopid,cmd | egrep "*-p 5201 -u *" | cut -f2 -d " " | head -n 1)"')
                         time.sleep(1)
                         print h2.cmd('kill 9 $killid')
                         time.sleep(1)
@@ -237,7 +246,7 @@ class test( unittest.TestCase ):
                     elif inputKey == 'm':
                         time.sleep(1)
                         info('\nhost-h33 down\n')
-                        print h33.cmd('killid="$(ps -eopid,cmd | egrep "*-p 5204 -u*" | cut -f1 -d " " | head -n 1)"')
+                        print h33.cmd('killid="$(ps -eopid,cmd | egrep "*-p 5204 -u *" | cut -f2 -d " " | head -n 1)"')
                         time.sleep(1)
                         print h33.cmd('kill 9 $killid')
                         time.sleep(1)
@@ -255,7 +264,41 @@ class test( unittest.TestCase ):
                         inputKey = ''
                     elif inputKey == 'o':
                         time.sleep(1)
-                        info('\n\n***Exit***\n\n')
+                        info('\n\n***Killing Daemons***\n\n')
+                        print h1.cmd('killid="$(ps -auxxx | egrep "*iperf3 -s -p 5201 -D" | cut -f7 -d " " | head -n 1)"')
+                        time.sleep(1)
+                        print h1.cmd('kill 9 $killid')
+                        time.sleep(1)
+                        print h1.cmd('unset killid')
+                        time.sleep(1)
+                        ##############################################
+                        print h1.cmd('killid="$(ps -auxxx | egrep "*iperf3 -s -p 5203 -D" | cut -f7 -d " " | head -n 1)"')
+                        time.sleep(1)
+                        print h1.cmd('kill 9 $killid')
+                        time.sleep(1)
+                        print h1.cmd('unset killid')
+                        time.sleep(1)
+                        #############################################
+                        print h1.cmd('killid="$(ps -auxxx | egrep "*iperf3 -s -p 5205 -D" | cut -f7 -d " " | head -n 1)"')
+                        time.sleep(1)
+                        print h1.cmd('kill 9 $killid')
+                        time.sleep(1)
+                        print h1.cmd('unset killid')
+                        time.sleep(1)
+                        #############################################
+                        print h1.cmd('killid="$(ps -auxxx | egrep "*iperf3 -s -p 5202 -D" | cut -f7 -d " " | head -n 1)"')
+                        time.sleep(1)
+                        print h1.cmd('kill 9 $killid')
+                        time.sleep(1)
+                        print h1.cmd('unset killid')
+                        time.sleep(1)
+                        #############################################
+                        print h1.cmd('killid="$(ps -auxxx | egrep "*iperf3 -s -p 5204 -D" | cut -f7 -d " " | head -n 1)"')
+                        time.sleep(1)
+                        print h1.cmd('kill 9 $killid')
+                        time.sleep(1)
+                        print h1.cmd('unset killid')
+                        time.sleep(1)                        
                         break
                     else:
                         time.sleep(1)
