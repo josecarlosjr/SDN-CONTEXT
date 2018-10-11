@@ -19,15 +19,12 @@ import random
 import time, copy
 from datetime import datetime
 
-
 # Cisco Reference bandwidth = 1 Gbps
 REFERENCE_BW = 10000000
 
 DEFAULT_BW = 10000000
 
 MAX_PATHS = 2
-
-
 
 #ADICIONADO 23/09/2018 variavel criada para o get_topology 
 ####################################
@@ -41,7 +38,7 @@ class ProjectController(app_manager.RyuApp):
     
     #ADICIONADO 26/09/2018 variavel global
     ################################
-    global dp, C
+    global dp, C, src, dst, first_port, last_port
     #global s_dpid = 0
     C = 0
 
@@ -62,8 +59,6 @@ class ProjectController(app_manager.RyuApp):
         self.monitor_thread = hub.spawn(self._monitor)
         self.eventos = []
         ##################################################
-
-
 
     #Deep Field Search
     def get_paths(self, src, dst):
@@ -90,20 +85,12 @@ class ProjectController(app_manager.RyuApp):
     def get_link_cost(self, s1, s2):
         '''
         Get the link cost between two switches 
-        '''
-        
+        '''        
         e1 = self.adjacency[s1][s2]
         e2 = self.adjacency[s2][s1]
         bl = min(self.bandwidths[s1][e1], self.bandwidths[s2][e2])
         ew = REFERENCE_BW/bl
-        #print ("get link cost")
-        #print ("self.adjacency[s1][s2]", e1)
-        #print ("self.adjacency[s2][s1]", e2)
-        #print "self.bandwidths[s1][e1] ", self.bandwidths[s1][e1]
-        #print "self.bandwidths[s2][e2] ", self.bandwidths[s2][e2]
-        #print "bl", bl
-        #print ("ew ", ew)
-        #print
+        
         return ew
 
     def get_path_cost(self, path):
@@ -113,25 +100,20 @@ class ProjectController(app_manager.RyuApp):
         cost = 0
         for i in range(len(path) - 1):
             cost += self.get_link_cost(path[i], path[i+1])
-        print
-        print "get path cost"
-        print path
-        print
         return cost
 
     def get_optimal_paths(self, src, dst):
         '''
         Get the n-most optimal paths according to MAX_PATHS
         '''
-        #print
         #print ("get optimal path")
         paths = self.get_paths(src, dst)
-        print ("get_optimal_path resultado do get_path ", paths)
+        #print ("get_optimal_path resultado do get_path ", paths)
         paths_count = len(paths) if len(
             paths) < MAX_PATHS else MAX_PATHS
         retorno = sorted(paths, key=lambda x: self.get_path_cost(x))[0:(paths_count)]
-        print
-        print ("get the most optimal paths", retorno)
+        #print
+        #print ("get the most optimal paths", retorno)
         return sorted(paths, key=lambda x: self.get_path_cost(x))[0:(paths_count)]
 
     def add_ports_to_paths(self, paths, first_port, last_port):
@@ -150,9 +132,7 @@ class ProjectController(app_manager.RyuApp):
                 in_port = self.adjacency[s2][s1]
             p[path[-1]] = (in_port, last_port)
             paths_p.append(p)
-        print 
-        print "add_port_to_path", paths_p
-        print
+        #print "add_port_to_path", paths_p
         return paths_p
 
 #    def generate_openflow_gid(self):
@@ -164,19 +144,15 @@ class ProjectController(app_manager.RyuApp):
 #            n = random.randint(0, 2**32)
 #        return n
 
-
     def install_paths(self, src, first_port, dst, last_port, ip_src, ip_dst):
         computation_start = time.time()
         paths = self.get_optimal_paths(src, dst)
         pw = []
-        print
-        print ("Print install_paths")
-        print "Variavel paths = get_optimal_paths: ", paths
-        for path in paths:
-            print "path dentro do for: ", path
+                
+        #print "Variavel paths = get_optimal_paths: ", paths
+        for path in paths:         
             pw.append(self.get_path_cost(path))
-            print path, "cost = ", pw[len(pw) - 1]
-            print
+          #  print path, "cost = ", pw[len(pw) - 1]          
         #sum_of_pw = sum(pw) * 1.0
         paths_with_ports = self.add_ports_to_paths(paths, first_port, last_port)
         switches_in_paths = set().union(*paths)
@@ -300,7 +276,6 @@ class ProjectController(app_manager.RyuApp):
 
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
-
         match = parser.OFPMatch()
         actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER,
                                           ofproto.OFPCML_NO_BUFFER)]
@@ -340,17 +315,11 @@ class ProjectController(app_manager.RyuApp):
         dpid = datapath.id
 
         if src not in self.hosts:
-            self.hosts[src] = (dpid, in_port)
-        #print src
-        #print dst
+            self.hosts[src] = (dpid, in_port)        
 
         out_port = ofproto.OFPP_FLOOD
         
         if arp_pkt:
-            #print ("PKT", pkt)
-            #print
-            #print dpid
-            #print
             src_ip = arp_pkt.src_ip
             dst_ip = arp_pkt.dst_ip
             #print (arp_pkt)
@@ -358,33 +327,20 @@ class ProjectController(app_manager.RyuApp):
                 self.arp_table[src_ip] = src
                 print
                 h1 = self.hosts[src]
-                h2 = self.hosts[dst]
-                #print ("h1 = self.hosts[src] ", h1)
-                #print ("h2 = self.hosts[dst]", h2)                
+                h2 = self.hosts[dst]                              
                 out_port = self.install_paths(h1[0], h1[1], h2[0], h2[1], src_ip, dst_ip)
                 #print colored('(h1[0], h1[1], h2[0], h2[1], src_ip, dst_ip)','blue')
                 #print (h1[0], h1[1], h2[0], h2[1], src_ip, dst_ip)
-                #print
                 self.install_paths(h2[0], h2[1], h1[0], h1[1], dst_ip, src_ip) # reverse
             elif arp_pkt.opcode == arp.ARP_REQUEST:
-                #print
-                #print "self.arp_table request" 
-                #print self.arp_table
                 if dst_ip in self.arp_table:
-                    #print ("if dst in self.arp_table", self.arp_table)
                     self.arp_table[src_ip] = src
-                    #print self.arp_table
-                    dst_mac = self.arp_table[dst_ip]
-                    #print dst_mac 
+                    dst_mac = self.arp_table[dst_ip]                     
                     h1 = self.hosts[src]
-                    #print ("h1 request ", h1)
                     h2 = self.hosts[dst_mac]
-                    #print ("h2 request", h2)
-                    out_port = self.install_paths(h1[0], h1[1], h2[0], h2[1], src_ip, dst_ip)
-                    #print
+                    out_port = self.install_paths(h1[0], h1[1], h2[0], h2[1], src_ip, dst_ip)                    
                     #print colored('h1[0], h1[1], h2[0], h2[1], src_ip, dst_ip', 'green')
-                    #print (h1[0], h1[1], h2[0], h2[1], src_ip, dst_ip)
-                    #print
+                    #print (h1[0], h1[1], h2[0], h2[1], src_ip, dst_ip)                    
                     self.install_paths(h2[0], h2[1], h1[0], h1[1], dst_ip, src_ip) # reverse
                        
         actions = [parser.OFPActionOutput(out_port)]
@@ -440,17 +396,7 @@ class ProjectController(app_manager.RyuApp):
          
         s1 = ev.link.src
         s2 = ev.link.dst
-        #print ev.link
-        #print ev.link.src.dpid
-        #print ev.link.dst.dpid
-        #print (type(ev))        
-        #print ev.link
-        #s_dpid = s1.dpid
-        #print s_dpid
         #print '\033[1;31;47m Link Switch', s1.dpid, 'Porta', s1.port_no, 'Down\033[1;m'
-        print 
-        #path = self.get_paths(s1.dpid,s2.dpid)
-        #print "get_paths", path
         print
         #if dp.id == s_dpid:
         #    for n in [0, 1]:
@@ -460,14 +406,7 @@ class ProjectController(app_manager.RyuApp):
             del self.adjacency[s1.dpid][s2.dpid]
             del self.adjacency[s2.dpid][s1.dpid]
         except KeyError:
-            pass
-    
-    #@set_ev_cls(event.EventPortModify)
-    #def port_modify_handler(self, ev):
-    #    print
-    #    print ev
-    #    print
-
+            pass    
 
 #--------------------------------------------------------------------------------
 
@@ -490,7 +429,7 @@ class ProjectController(app_manager.RyuApp):
 
         if ev.state == MAIN_DISPATCHER:
             if not datapath.id in self.datapath_list:
-                # self.logger.debug('register datapath: %016x', datapath.id)
+                #self.logger.debug('register datapath: %016x', datapath.id)
                 #print 'register datapath:', datapath.id
                 self.datapath_list[datapath.id] = datapath
             elif ev.state == DEAD_DISPATCHER:
@@ -525,46 +464,50 @@ class ProjectController(app_manager.RyuApp):
     #classe utilizada ryu.controller.controller.Datapath
     #ryu.ofproto.ofproto_v1_3_parser.OFPPort
     #ryu.ofproto.ofproto_v1_3
-    #flags OFPPS_LINK_DOWN
+    #flag utilizada do ev.msg.desc.state --> OFPPS_LINK_DOWN
     ############################################################# 
     @set_ev_cls(ofp_event.EventOFPPortStatus, MAIN_DISPATCHER)
-    def port_status_handler(self, ev):
-        
+    def port_status_handler(self, ev):     
+        global C, src, dst, first_port, last_port
 
         msg = ev.msg
         dp = msg.datapath #dp.id
         ofp = dp.ofproto
-        #print "OFP", ofp
-        #print
-        #print "EV", ev
-                    
-        if msg.desc.state == 1:
-            if msg.reason == ofp.OFPPR_ADD:
-                reason = 'ADD'
-            elif msg.reason == ofp.OFPPR_DELETE:
-                reason = 'DELETE'
-            #elif msg.reason == ofp.OFPPR_MODIFY:
-            #    reason = 'MODIFY'
-                #print
-            #    print '\033[1;31;47m Nome da interface:', msg.desc.name, '\033[1;m'
-            #    print '\033[1;31;47m Porta: ', msg.desc.port_no, 'Down\033[1;m'
-                #print "Estado(flag): ", msg.desc.state
-                #print "Config (flag):", msg.desc.config
-                #print
-            elif msg.desc.state == ofp.OFPPS_LINK_DOWN:
-                print colored('Link Down','blue')
-            elif msg.desc.state == ofp.OFPPS_BLOCKED:
-                print colored('ofp.OFPPC_NO_RECV','blue')
-            elif msg.desc.state == ofp.OFPPS_LIVE:
-                print colored('OFPPC_NO_FWD','blue')
-            elif msg.desc.state == ofp.OFPPC_NO_PACKET_IN:
-                print colored('OFPPC_NO_PACKET_IN','blue')
-            else:
-                reason = 'UNKNOWN'
         
+        #if msg.desc.state == 1:            
+        if msg.reason == ofp.OFPPR_ADD:
+            reason = 'ADD'
+            #continue
+        if msg.reason == ofp.OFPPR_DELETE:
+            reason = 'DELETE'
+            #continue
+        if msg.reason == ofp.OFPPR_MODIFY:
+            #reason = 'MODIFY'
+        if msg.desc.state == ofp.OFPPS_LINK_DOWN:
+            print
+            print '\033[1;31;47m Nome da interface:', msg.desc.name, '\033[1;m'
+            print '\033[1;31;47m Porta: ', msg.desc.port_no, 'Porta status DOWN\033[1;m'
+            if (C == 0): #Condicional para armazenar o dp e in_port origem
+                src = dp.id
+                first_port = msg.desc.port_no
 
+            if (C != 0): #Condicional para armazenar o dp e out_port destino
+                dst = dp.id
+                last_port = msg.desc.port_no
+
+            if (C > 0 and src and dst):
+                print "instalando novo caminho"
+                #out_port = self.install_paths(src, first_port, dst, last_port, ip_src, ip_dst)
+            else: pass
+            C += 1 #incrementa a variável de controle
+            if (C == 2): C = 0 #zera a variavel de controle ao alcançar 2
+        if msg.desc.state == ofp.OFPPS_BLOCKED: pass
+        if msg.desc.state == ofp.OFPPS_LIVE: pass
+        if msg.desc.state == ofp.OFPPC_NO_PACKET_IN: pass
+        else:
+            reason = 'UNKNOWN'
+        
     ##############################################################
-
 
     #ADICIONADO 23/09/2018
     #Captura a topologia da rede
