@@ -19,18 +19,21 @@ import random
 import time, copy
 from datetime import datetime
 
-# Cisco Reference bandwidth = 1 Gbps
-REFERENCE_BW = 10000000
-
-DEFAULT_BW = 10000000
-
 MAX_PATHS = 2
+
+IP_1 = '192.168.1.1'
+IP_2 = '192.168.2.2'
+IP_3 = '192.168.3.3'
+IP_4 = '192.168.4.4'
 
 #ADICIONADO 23/09/2018 variavel criada para o get_topology 
 ####################################
 myswitches = []
 datapath_list = {}
+# adjacency map [sw1][sw2]->port from sw1 to sw2
+adjacency = defaultdict(lambda: defaultdict(lambda: None))
 ####################################
+
 
 
 class ProjectController(app_manager.RyuApp):
@@ -53,7 +56,7 @@ class ProjectController(app_manager.RyuApp):
         self.multipath_group_ids = {}
         self.group_ids = []
         self.adjacency = defaultdict(dict)
-        self.bandwidths = defaultdict(lambda: defaultdict(lambda: DEFAULT_BW))
+        self.bandwidths = defaultdict(lambda: defaultdict(lambda: 10000000))
         #ADICIONADO 22/09/2018
         ##################################################
         self.monitor_thread = hub.spawn(self._monitor)
@@ -77,9 +80,7 @@ class ProjectController(app_manager.RyuApp):
                     paths.append(path + [next])
                 else:
                     stack.append((next, path + [next]))
-        print
-        print "Available paths from get path ", src, " to ", dst, " : ", paths
-        print
+        
         return paths
 
     def get_link_cost(self, s1, s2):
@@ -89,7 +90,7 @@ class ProjectController(app_manager.RyuApp):
         e1 = self.adjacency[s1][s2]
         e2 = self.adjacency[s2][s1]
         bl = min(self.bandwidths[s1][e1], self.bandwidths[s2][e2])
-        ew = REFERENCE_BW/bl
+        ew = 10000000/bl#REFERENCE_BW/bl
         
         return ew
 
@@ -108,20 +109,14 @@ class ProjectController(app_manager.RyuApp):
         '''
         #print ("get optimal path")
         paths = self.get_paths(src, dst)
-        #print ("get_optimal_path resultado do get_path ", paths)
         paths_count = len(paths) if len(
-            paths) < MAX_PATHS else MAX_PATHS
-        retorno = sorted(paths, key=lambda x: self.get_path_cost(x))[0:(paths_count)]
-        #print
-        #print ("get the most optimal paths", retorno)
+            paths) < MAX_PATHS else MAX_PATHS                
         return sorted(paths, key=lambda x: self.get_path_cost(x))[0:(paths_count)]
 
     def add_ports_to_paths(self, paths, first_port, last_port):
         '''
         Add the ports that connects the switches for all paths
         '''
-        #print ("add port to path is called")
-        #print ("paths", paths)
         paths_p = []
         for path in paths:
             p = {}
@@ -132,24 +127,14 @@ class ProjectController(app_manager.RyuApp):
                 in_port = self.adjacency[s2][s1]
             p[path[-1]] = (in_port, last_port)
             paths_p.append(p)
-        #print "add_port_to_path", paths_p
         return paths_p
 
-#    def generate_openflow_gid(self):
-#        '''
-#    #    Returns a random OpenFlow group id
-#    #    '''
-#        n = random.randint(0, 2**32)
-#        while n in self.group_ids:
-#            n = random.randint(0, 2**32)
-#        return n
 
     def install_paths(self, src, first_port, dst, last_port, ip_src, ip_dst):
         computation_start = time.time()
         paths = self.get_optimal_paths(src, dst)
         pw = []
-                
-        #print "Variavel paths = get_optimal_paths: ", paths
+        
         for path in paths:         
             pw.append(self.get_path_cost(path))
           #  print path, "cost = ", pw[len(pw) - 1]          
@@ -191,55 +176,11 @@ class ProjectController(app_manager.RyuApp):
                 out_ports = ports[in_port]
 
                 #GROUP 
-                print ("Porta de saida: ",out_ports) 
-
-                #if len(out_ports) > 1:
-                #    group_id = None
-                #    group_new = False
-                #    print "datapath tiver mais de um caminho"
-
-                #    if (node, src, dst) not in self.multipath_group_ids:
-                #        group_new = True
-                #        self.multipath_group_ids[
-                #            node, src, dst] = self.generate_openflow_gid()
-                #    group_id = self.multipath_group_ids[node, src, dst]
-                #    print "self.multipath_group_ids[node, src, dst]", self.multipath_group_ids[node, src, dst]
-                        #print
-
-                #    buckets = []
-                #    print "node at ",node," out ports : ",out_ports
-                #    for port, weight in out_ports:
-                #        bucket_weight = int(round((1 - weight/sum_of_pw) * 10))
-                #        bucket_action = [ofp_parser.OFPActionOutput(port)]
-                #        buckets.append(
-                #            ofp_parser.OFPBucket(
-                #                weight=bucket_weight,
-                #                watch_port=port,
-                #                watch_group=ofp.OFPG_ANY,
-                #                actions=bucket_action
-                #            )
-                #        )
-
-                #    if group_new:
-                #        req = ofp_parser.OFPGroupMod(
-                #            dp, ofp.OFPGC_ADD, ofp.OFPGT_SELECT, group_id,
-                #            buckets
-                #        )
-                #        dp.send_msg(req)
-                #    else:
-                #        req = ofp_parser.OFPGroupMod(
-                #            dp, ofp.OFPGC_MODIFY, ofp.OFPGT_SELECT,
-                #            group_id, buckets)
-                #        dp.send_msg(req)
-
-                #    actions = [ofp_parser.OFPActionGroup(group_id)]
-
-                #    self.add_flow(dp, 32768, match_ip, actions)
-                #    self.add_flow(dp, 1, match_arp, actions)
+                #print ("Porta de saida: ",out_ports)                 
 
                 #elif len(out_ports) == 1:
-                print "datapath tive apenas 1 caminho:"
-                print
+                #print "datapath tive apenas 1 caminho:"
+                #print
                 actions = [ofp_parser.OFPActionOutput(out_ports[0][0])]
                 
                 self.add_flow(dp, 32768, match_ip, actions)
@@ -321,16 +262,13 @@ class ProjectController(app_manager.RyuApp):
         
         if arp_pkt:
             src_ip = arp_pkt.src_ip
-            dst_ip = arp_pkt.dst_ip
-            #print (arp_pkt)
+            dst_ip = arp_pkt.dst_ip            
             if arp_pkt.opcode == arp.ARP_REPLY:
                 self.arp_table[src_ip] = src
                 print
                 h1 = self.hosts[src]
                 h2 = self.hosts[dst]                              
-                out_port = self.install_paths(h1[0], h1[1], h2[0], h2[1], src_ip, dst_ip)
-                #print colored('(h1[0], h1[1], h2[0], h2[1], src_ip, dst_ip)','blue')
-                #print (h1[0], h1[1], h2[0], h2[1], src_ip, dst_ip)
+                out_port = self.install_paths(h1[0], h1[1], h2[0], h2[1], src_ip, dst_ip)                
                 self.install_paths(h2[0], h2[1], h1[0], h1[1], dst_ip, src_ip) # reverse
             elif arp_pkt.opcode == arp.ARP_REQUEST:
                 if dst_ip in self.arp_table:
@@ -338,9 +276,7 @@ class ProjectController(app_manager.RyuApp):
                     dst_mac = self.arp_table[dst_ip]                     
                     h1 = self.hosts[src]
                     h2 = self.hosts[dst_mac]
-                    out_port = self.install_paths(h1[0], h1[1], h2[0], h2[1], src_ip, dst_ip)                    
-                    #print colored('h1[0], h1[1], h2[0], h2[1], src_ip, dst_ip', 'green')
-                    #print (h1[0], h1[1], h2[0], h2[1], src_ip, dst_ip)                    
+                    out_port = self.install_paths(h1[0], h1[1], h2[0], h2[1], src_ip, dst_ip)                                     
                     self.install_paths(h2[0], h2[1], h1[0], h1[1], dst_ip, src_ip) # reverse
                        
         actions = [parser.OFPActionOutput(out_port)]
@@ -398,9 +334,6 @@ class ProjectController(app_manager.RyuApp):
         s2 = ev.link.dst
         #print '\033[1;31;47m Link Switch', s1.dpid, 'Porta', s1.port_no, 'Down\033[1;m'
         print
-        #if dp.id == s_dpid:
-        #    for n in [0, 1]:
-        #        self.remove_flows(dp, n)
         #Exception handling if switch already deleted
         try:
             del self.adjacency[s1.dpid][s2.dpid]
@@ -408,6 +341,29 @@ class ProjectController(app_manager.RyuApp):
         except KeyError:
             pass    
 
+    #ADICIONADO 14/10/2018
+    #######################################################################
+    def install_controller(self, datapath):
+        ofproto = datapath.ofproto
+        parser = datapath.ofproto_parser
+        match = parser.OFPMatch()
+
+        actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER,
+            ofproto.OFPCML_NO_BUFFER)]
+
+        inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,
+            actions)]
+
+        mod = datapath.ofproto_parser.OFPFlowMod(
+                datapath=datapath, match=match, cookie=0,
+                command=ofproto.OFPFC_ADD, idle_timeout=0, hard_timeout=0,
+                priority=0, instructions=inst)
+
+        datapath.send_msg(mod)
+     ######################################################################    
+        
+        
+        
 #--------------------------------------------------------------------------------
 
     #ADICIONADO 22/09/2018
@@ -458,6 +414,29 @@ class ProjectController(app_manager.RyuApp):
         #print (dp.id)
     #############################################################
 
+    #############################################################
+    @set_ev_cls(ofp_event.EventOFPPortStatsReply, MAIN_DISPATCHER)
+    def _port_stats_reply_handler(self, ev):
+        global byte, clock, bw_used, bw_available, band, result, tx_ini, tx_fin
+        body = ev.msg.body
+        dpid = ev.msg.datapath.id
+        datapath = ev.msg.datapath
+
+        t = time.localtime().tm_sec
+
+        if dpid == 2:
+            print dpid
+            for stat in sorted(body, key=attrgetter('port_no')):
+                self.logger.info('switch             '
+                        'Port_no         '
+                        'Rec_bytes     Trans_bytes       '
+                        )
+                self.logger.info('%016x  %8x         '
+                        '%8d     %8d       ',
+                        ev.msg.datapath.id, stat.port_no,
+                        stat.rx_bytes, stat.tx_bytes)  
+    #############################################################  
+    
 
     #ADICIONADO 23/09/2018
     #Exibe o status de portas do switch
@@ -496,11 +475,50 @@ class ProjectController(app_manager.RyuApp):
                 last_port = msg.desc.port_no
 
             if (C > 0 and src and dst):
-                print "instalando novo caminho"
-                #out_port = self.install_paths(src, first_port, dst, last_port, ip_src, ip_dst)
+                ip_src = ip_dst = None
+
+                #print "src", src, "dst", dst
+                if (src == 1 and dst == 2):
+                    ip_src=IP_1
+                    ip_dst=IP_2
+                elif (src == 2 and dst == 1):
+                    ip_src=IP_2
+                    ip_dst=IP_1
+                elif (src == 3 and dst == 2):
+                    ip_src=IP_3
+                    ip_dst=IP_2
+                elif (src == 2 and dst == 3):
+                    ip_src=IP_2
+                    ip_dst=IP_3
+                elif (src == 3 and dst == 4):
+                    ip_src=IP_3
+                    ip_dst=IP_4
+                elif (src == 4 and dst == 3):
+                    ip_src=IP_4
+                    ip_dst=IP_3
+                elif (src == 1 and dst == 4):
+                    ip_src=IP_1
+                    ip_dst=IP_4
+                elif (src == 4 and dst == 1):
+                    ip_src=IP_4
+                    ip_dst=IP_1
+                else:
+                    pass
+
             else: pass
             C += 1 #incrementa a variável de controle
-            if (C == 2): C = 0 #zera a variavel de controle ao alcançar 2
+            if (C == 2):
+                C = 0 #zera a variavel de controle ao alcançar 2                
+                print "deletando tabelas de fluxos"
+                if src and dst:
+                    for datapath in self.datapath_list.values():
+                        if datapath.id == src: src = datapath
+                        if datapath.id == dst: dst = datapath
+                    print "Recriando tabelas Origem: ", src.id, " Destino:", dst.id
+                    self.remove_flows(src, 0)
+                    self.remove_flows(dst, 0)
+                    self.install_controller(src)
+                    self.install_controller(dst)
         if msg.desc.state == ofp.OFPPS_BLOCKED: pass
         if msg.desc.state == ofp.OFPPS_LIVE: pass
         if msg.desc.state == ofp.OFPPC_NO_PACKET_IN: pass
@@ -533,36 +551,46 @@ class ProjectController(app_manager.RyuApp):
     
   
     #ADICIONADO 25/09/2018
+    #usa o valor retornado da função remove_tale_flow para enviar
+    #a mensagem até o datapath(switch) 
     ##############################################################
-    #def remove_flows(self, datapath, table_id):
-    #    
-    #    parser = datapath.ofproto_parser
-    #    ofproto = dp.ofproto
-    #    empty_match = parser.OFPMatch()
-    #    instructions = []
-    #    flow_mod = self.remove_table_flows(dp, table_id, empty_match, 
-    #            instructions)
-    #    print "deletando entradas de fluxos da tabela:", table_id
-    #    datapath.send_msg(flow_mod)
-    ##############################################################
+    def remove_flows(self, datapath, table_id):
+
+        parser = datapath.ofproto_parser
+        ofproto = datapath.ofproto
+
+        empty_match = parser.OFPMatch()
+        instructions = []
+
+        flow_mod = self.remove_table_flows(datapath,
+                table_id,
+                empty_match,
+                instructions)
+        print "deletando entradas de fluxos da tabela:", table_id
+        datapath.send_msg(flow_mod)
 
     #ADICONADO 25/09/2018
+    #Função retorna o valor para remover tabelas 
     ##############################################################
-    #def remove_table_flows(self, datapath, table_id, match, instructions):
-    #    """create OFP flow mod message to remove flows from table."""
-    #    
-    #    #print "dp remove_tables_flows", dp
-    #    ofproto = datapath.ofproto
-    #    #print colored('dp.id remove table flow','blue')
-    #    #print dp.id
-    #            
-    #    flow_mod = datapath.ofproto_parser.OFPFlowMod(dp, 0, 0, table_id,
-    #            ofproto.OFPFC_DELETE, 0, 0, 1, ofproto.OFPCML_NO_BUFFER,
-    #            ofproto.OFPP_ANY, ofproto.OFPG_ANY,
-    #            0, match, instructions)
+    def remove_table_flows(self, datapath, table_id, match, instructions):
+        """create OFP flow mod message to remove flows from table."""
 
-    #    return flow_mod
-    ##############################################################
+        #print "dp remove_tables_flows", dp
+        ofproto = datapath.ofproto
+        #print dp.id
+
+        #OFPFlowMod(datapath, cookie=0, cookie_mask=0, table_id=0, command=0, idle_timeout=0, hard_timeout=0, priority=32768 buffer_id=4294967295, out_port=0, out_group=0, flags=0, match=None, instructions=None
+
+        flow_mod = datapath.ofproto_parser.OFPFlowMod(datapath, 0, 0, table_id,
+                ofproto.OFPFC_DELETE, 0, 0,
+                1,
+                ofproto.OFPCML_NO_BUFFER,
+                ofproto.OFPP_ANY,
+                ofproto.OFPP_ANY, 0,
+                match, instructions)
+                #ofproto.OFPG_ANY para grupos
+
+        return flow_mod
 
     #ADICIONADO
     ###############################################################
