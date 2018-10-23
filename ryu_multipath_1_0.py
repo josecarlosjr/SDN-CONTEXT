@@ -46,19 +46,19 @@ class ProjectController(app_manager.RyuApp):
     
     #Variaveis globais
     #DP 1
-    global band_1_1, result_1_1, band_rx_1_1, result_rx_1_1, tx_ini_1_1, tx_fin_1_1, rx_ini_1_1, rx_fin_1_1
+    global band_1_1, result_1_1, band_rx_1_1, result_rx_1_1, tx_ini_1_1, tx_fin_1_1, rx_ini_1_1, rx_fin_1_1 #dp 1 port 1
     global band_1_2, result_1_2, band_rx_1_2, result_rx_1_2, tx_ini_1_2, tx_fin_1_2, rx_ini_1_2, rx_fin_1_2 #dp 1 port 2
     global band_1_3, result_1_3, band_rx_1_3, result_rx_1_3, tx_ini_1_3, tx_fin_1_3, rx_ini_1_3, rx_fin_1_3 #dp 1 port 3
     #DP 2
-    global band_2_1, result_2_1, band_rx_2_1, result_rx_2_1, tx_ini_2_1, tx_fin_2_1, rx_ini_2_1, rx_fin_2_1
+    global band_2_1, result_2_1, band_rx_2_1, result_rx_2_1, tx_ini_2_1, tx_fin_2_1, rx_ini_2_1, rx_fin_2_1 #dp 2 port 1
     global band_2_2, result_2_2, band_rx_2_2, result_rx_2_2, tx_ini_2_2, tx_fin_2_2, rx_ini_2_2, rx_fin_2_2 #dp 2 port 2
     global band_2_3, result_2_3, band_rx_2_3, result_rx_2_3, tx_ini_2_3, tx_fin_2_3, rx_ini_2_3, rx_fin_2_3 #dp 2 port 3
     #DP 3
-    global band_3_1, result_3_1, band_rx_3_1, result_rx_3_1, tx_ini_3_1, tx_fin_3_1, rx_ini_3_1, rx_fin_3_1
+    global band_3_1, result_3_1, band_rx_3_1, result_rx_3_1, tx_ini_3_1, tx_fin_3_1, rx_ini_3_1, rx_fin_3_1 #dp 3 port 1
     global band_3_2, result_3_2, band_rx_3_2, result_rx_3_2, tx_ini_3_2, tx_fin_3_2, rx_ini_3_2, rx_fin_3_2 #dp 3 port 2
     global band_3_3, result_3_3, band_rx_3_3, result_rx_3_3, tx_ini_3_3, tx_fin_3_3, rx_ini_3_3, rx_fin_3_3 #dp 3 port 3
     #DP 4
-    global band_4_1, result_4_1, band_rx_4_1, result_rx_4_1, tx_ini_4_1, tx_fin_4_1, rx_ini_4_1, rx_fin_4_1
+    global band_4_1, result_4_1, band_rx_4_1, result_rx_4_1, tx_ini_4_1, tx_fin_4_1, rx_ini_4_1, rx_fin_4_1 #dp 4 port 1
     global band_4_2, result_4_2, band_rx_4_2, result_rx_4_2, tx_ini_4_2, tx_fin_4_2, rx_ini_4_2, rx_fin_4_2 #dp 4 port 2
     global band_4_3, result_4_3, band_rx_4_3, result_rx_4_3, tx_ini_4_3, tx_fin_4_3, rx_ini_4_3, rx_fin_4_3 #dp 4 port 3
 
@@ -504,7 +504,7 @@ class ProjectController(app_manager.RyuApp):
         
         #contador de segundos
         t = time.localtime().tm_sec
-        print colored(t,'green')
+        #print colored(t,'green')
 
         ################################################################################################
         #seleciona o dp 1
@@ -526,7 +526,6 @@ class ProjectController(app_manager.RyuApp):
                     # Calculo de banda para bytes transmitidos (tx_bytes)
                     # Se o valor bytes transmitidos iniciais forem 0
                     if tx_ini_1_1 == 0: tx_ini_1_1 = stat.tx_bytes  # valor inicial bytes armazenado
-
                     tx_fin_1_1 = stat.tx_bytes
                     band_1_1 = (tx_fin_1_1-tx_ini_1_1)*8
                     result_1_1 = int(band_1_1/1048576)
@@ -563,7 +562,6 @@ class ProjectController(app_manager.RyuApp):
                     
                     #Calculo de banda para bytes recebidos (rx_bytes)
                     if rx_ini_1_2 == 0: rx_ini_1_2 = stat.rx_bytes
-                    
                     rx_fin_1_2 = stat.rx_bytes
                     band_rx_1_2 = (rx_fin_1_2-rx_ini_1_2)*8
                     result_rx_1_2 = int(band_rx_1_2/1048576)
@@ -646,7 +644,6 @@ class ProjectController(app_manager.RyuApp):
                     # Calculo de banda para bytes transmitidos
                     # Se o valor bytes transmitidos iniciais forem 0
                     if tx_ini_2_2 == 0: tx_ini_2_2 = stat.tx_bytes  # valor inicial bytes armazenado
-                    
                     tx_fin_2_2 = stat.tx_bytes                    
                     band_2_2 = (tx_fin_2_2-tx_ini_2_2)*8
                     result_2_2 = int(band_2_2/1048576)
@@ -656,7 +653,6 @@ class ProjectController(app_manager.RyuApp):
                     #Calculo de banda para bytes recebidos
                     #Se o valor de bytes recebidos for 0 
                     if rx_ini_2_2 == 0: rx_ini_2_2 = stat.rx_bytes  # valor inicial bytes armazenado
-                    
                     rx_fin_2_2 = stat.rx_bytes
                     band_rx_2_2 = (rx_fin_2_2-rx_ini_2_2)*8
                     result_rx_2_2 = int(band_rx_2_2/1048576)
@@ -677,7 +673,6 @@ class ProjectController(app_manager.RyuApp):
                     
                     #calculo de banda para bytes transmitidos na porta 3
                     if tx_ini_2_3 == 0: tx_ini_2_3 = stat.tx_bytes # valor inicial bytes armazenado
-                    
                     tx_fin_2_3 = stat.tx_bytes
                     band_2_3 = (tx_fin_2_3-tx_ini_2_3)*8
                     result_2_3 = int(band_2_3/1048576)
@@ -685,7 +680,6 @@ class ProjectController(app_manager.RyuApp):
 
                     #calculo de banda para bytes recebidos na porta 3
                     if rx_ini_2_3 == 0: rx_ini_2_3 = stat.rx_bytes
-                    
                     rx_fin_2_3 = stat.rx_bytes
                     band_rx_2_3 = (rx_fin_2_3-rx_ini_2_3)*8
                     result_rx_2_3 = int(band_rx_2_3/1048576)
@@ -712,7 +706,6 @@ class ProjectController(app_manager.RyuApp):
                     # Calculo de banda para bytes transmitidos (tx_bytes)
                     # Se o valor bytes transmitidos iniciais forem 0
                     if tx_ini_3_1 == 0: tx_ini_3_1 = stat.tx_bytes  # valor inicial bytes armazenado
-
                     tx_fin_3_1 = stat.tx_bytes
                     band_3_1 = (tx_fin_3_1-tx_ini_3_1)*8
                     result_3_1 = int(band_3_1/1048576)
@@ -741,7 +734,6 @@ class ProjectController(app_manager.RyuApp):
                     # Calculo de banda para bytes transmitidos (tx_bytes)
                     # Se o valor bytes transmitidos iniciais forem 0
                     if tx_ini_3_2 == 0: tx_ini_3_2 = stat.tx_bytes  # valor inicial bytes armazenado
-                    
                     tx_fin_3_2 = stat.tx_bytes
                     band_3_2 = (tx_fin_3_2-tx_ini_3_2)*8
                     result_3_2 = int(band_3_2/1048576)
@@ -838,7 +830,6 @@ class ProjectController(app_manager.RyuApp):
                     # Calculo de banda para bytes transmitidos (tx_bytes)
                     # Se o valor bytes transmitidos iniciais forem 0
                     if tx_ini_4_2 == 0: tx_ini_4_2 = stat.tx_bytes  # valor inicial bytes armazenado
-                    
                     tx_fin_4_2 = stat.tx_bytes
                     band_4_2 = (tx_fin_4_2-tx_ini_4_2)*8
                     result_4_2 = int(band_4_2/1048576)
@@ -846,7 +837,6 @@ class ProjectController(app_manager.RyuApp):
 
                     #Calculo de banda para bytes recebidos (rx_bytes)
                     if rx_ini_4_2 == 0: rx_ini_4_2 = stat.rx_bytes
-                    
                     rx_fin_4_2 = stat.rx_bytes
                     band_rx_4_2 = (rx_fin_4_2-rx_ini_4_2)*8
                     result_rx_4_2 = int(band_rx_4_2/1048576)
