@@ -27,6 +27,7 @@ IP_2 = '192.168.2.2'
 IP_3 = '192.168.3.3'
 IP_4 = '192.168.4.4'
 
+#CONSTANTE ADICIONADA
 MAX_BAND = 800 #Mbps
 
 #ADICIONADO 23/09/2018 variavel criada para o get_topology 
