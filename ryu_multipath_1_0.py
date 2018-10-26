@@ -31,7 +31,7 @@ IP_4 = '192.168.4.4'
 MAX_BAND = 800 #Mbps
 
 #ADICIONADO 23/09/2018 variavel criada para o get_topology 
-####################################
+###################################
 myswitches = []
 datapath_list = {}
 # adjacency map [sw1][sw2]->port from sw1 to sw2
