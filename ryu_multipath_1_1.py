@@ -31,8 +31,6 @@ MAX_BAND = 800 #Mbps
 
 #ADICIONADO 23/09/2018 variavel criada para o get_topology 
 ####################################
-myswitches = []
-datapath_list = {}
 # adjacency map [sw1][sw2]->port from sw1 to sw2
 adjacency = defaultdict(lambda: defaultdict(lambda: None))
 ####################################
@@ -743,6 +741,17 @@ class ProjectController(app_manager.RyuApp):
                     rx_ini_3_2 = rx_fin_3_2
                     
                     ###################################################################################
+                throuput3_2 = result_3_2 + result_rx_3_2
+
+                ###################################################################################
+                if c == 1: c += 1
+                if (throuput3_2 > MAX_BAND*0.8) and c == 2: 
+                    print '\033[1;31;47m Porta 2 Congestionada\033[1;m'
+                    c += 1
+                elif (throuput3_2 < MAX_BAND*0.8) and c == 3:
+                    c = 0                    
+                    self.send_flow_mod(datapath, stat.port_no, IP_3)
+                    print '\033[1;34;47m Tráfego normalizado na porta ', stat.port_no,'\033[1;m'
 
 
 
@@ -783,16 +792,16 @@ class ProjectController(app_manager.RyuApp):
                     #O Status da porta é modificado e o sentido do fluxo modificado
                     if (throuput > MAX_BAND*0.8) and c == 0:
                         print '\033[1;31;47m Porta Congestionada\033[1;m'
-                        print '\033[1;31;47m 80% da banda alcançada\033[1;m'
+                        #print '\033[1;31;47m 80% da banda alcançada\033[1;m'
                         print '\033[1;34;47m Redirecionando o Tráfego\033[1;m'
                         self.send_port_mod(datapath, stat.port_no)
                         self.send_flow_mod(datapath, stat.port_no, IP_3)
                         c += 1
-                    elif (throuput < MAX_BAND*0.8) and c != 0:
-                        c = 0
-                        print
-                        print '\033[1;34;47m Restaurando fluxo anterior\033[1;m'
-                        print
+                    #elif (throuput < MAX_BAND*0.8) and c != 0:
+                    #    c = 0
+                    #    print
+                    #    print '\033[1;34;47m Restaurando fluxo anterior\033[1;m'
+                    #    print
                     else:
                         pass
                         
