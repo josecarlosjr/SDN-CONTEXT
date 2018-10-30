@@ -740,7 +740,8 @@ class ProjectController(app_manager.RyuApp):
                     
                     ###################################################################################
                 throuput3_2 = result_3_2 + result_rx_3_2
-
+                
+                #Regra para normalização da porta 
                 ###################################################################################
                 if c == 1: c += 1 #variavel de controle alcancada na porta 2 e adiciona + 1
                 if (throuput3_2 > MAX_BAND*0.8) and c == 2:# 
@@ -748,7 +749,7 @@ class ProjectController(app_manager.RyuApp):
                     c += 1 
                 elif (throuput3_2 < MAX_BAND*0.8) and c == 3:# quando a banda normalizar 
                     c = 0                                    # zera a variável de controle
-                    self.send_flow_mod(datapath, stat.port_no, IP_3)
+                    self.send_flow_mod(datapath, stat.port_no, IP_3)#chama novamente a função para normalização da porta
                     print '\033[1;34;47m Tráfego normalizado na porta ', stat.port_no,'\033[1;m'
 
                 ###################################################################################
