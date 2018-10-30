@@ -963,10 +963,8 @@ class ProjectController(app_manager.RyuApp):
         datapath.send_msg(req2)
         ############################################################################################
         #Adiciona um novo fluxo apontando para outra porta
-        if out_ports == 3:
-            out_ports = out_ports - 1
-        elif out_ports == 2:
-            out_ports +=1
+        if out_ports == 3: out_ports = out_ports - 1
+        elif out_ports == 2: out_ports +=1
         else: pass
         
         actions = [ofp_parser.OFPActionOutput(out_ports)]
