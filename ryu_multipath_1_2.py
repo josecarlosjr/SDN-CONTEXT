@@ -896,12 +896,10 @@ class ProjectController(app_manager.RyuApp):
         global out_ports
         global mac_addr_1_1, mac_addr_1_2, mac_addr_1_3, mac_addr_2_1, mac_addr_2_2, mac_addr_2_3
         global mac_addr_3_1, mac_addr_3_2, mac_addr_3_3, mac_addr_4_1, mac_addr_4_2, mac_addr_4_3
-
+        
         ofp = datapath.ofproto
         ofp_parser = datapath.ofproto_parser
-
-        port_no = 3
-        #print port_no
+        port_no = 3        
         #print mac_addr_3_3
         #hw_addr = 'fa:c8:e8:76:1d:7e'
         hw_addr = mac_addr_3_3
@@ -918,11 +916,9 @@ class ProjectController(app_manager.RyuApp):
     #ADICIONADO 24/10/2018
     #FUNCAO PARA MODIFICAR O FLUXO
     def send_flow_mod(self, datapath, out_ports, ip_n):
-        #global out_ports
-        #print port
+        #global out_ports        
         ofp = datapath.ofproto
-        ofp_parser = datapath.ofproto_parser
-        
+        ofp_parser = datapath.ofproto_parser        
         cookie = cookie_mask = 0
         table_id = 0
         idle_timeout = hard_timeout = 0
@@ -963,8 +959,8 @@ class ProjectController(app_manager.RyuApp):
         datapath.send_msg(req2)
         ############################################################################################
         #Adiciona um novo fluxo apontando para outra porta
-        if out_ports == 3: out_ports = out_ports - 1
-        elif out_ports == 2: out_ports +=1
+        if out_ports == 3: out_ports = out_ports - 1#se a porta congestionada for 3 diminui e aponta para 2
+        elif out_ports == 2: out_ports +=1 #se a porta for 2 soma e aponta para 3
         else: pass
         
         actions = [ofp_parser.OFPActionOutput(out_ports)]
@@ -972,8 +968,7 @@ class ProjectController(app_manager.RyuApp):
         self.add_flow(datapath, 32768, match_ip, actions)
         self.add_flow(datapath, 32768, match_arp, actions)
         
-
-
+    
     #ADICIONADO 23/09/2018
     #Exibe o status de portas do switch
     #classe utilizada ryu.controller.controller.Datapath
@@ -1023,36 +1018,7 @@ class ProjectController(app_manager.RyuApp):
                 last_port = msg.desc.port_no
             
             if (C > 0 and src and dst and first_port and last_port):
-                ip_src = ip_dst = None
-                
-                #armazena os macs de origem e destino
-                #print "src", src, "dst", dst
-                #if (src == 1 and dst == 2):
-                #    ip_src=IP_1
-                #    ip_dst=IP_2
-                #elif (src == 2 and dst == 1):
-                #    ip_src=IP_2
-                #    ip_dst=IP_1
-                #elif (src == 3 and dst == 2):
-                #    ip_src=IP_3
-                #    ip_dst=IP_2
-                #elif (src == 2 and dst == 3):
-                #    ip_src=IP_2
-                #    ip_dst=IP_3
-                #elif (src == 3 and dst == 4):
-                #    ip_src=IP_3
-                #    ip_dst=IP_4
-                #elif (src == 4 and dst == 3):
-                #    ip_src=IP_4
-                #    ip_dst=IP_3
-                #elif (src == 1 and dst == 4):
-                #    ip_src=IP_1
-                #    ip_dst=IP_4
-                #elif (src == 4 and dst == 1):
-                #    ip_src=IP_4
-                #    ip_dst=IP_1
-                #else:
-                #    pass
+                ip_src = ip_dst = None   
                            
             else: pass
             C += 1 #incrementa a variável de controle
@@ -1080,11 +1046,9 @@ class ProjectController(app_manager.RyuApp):
     #usa o valor retornado da função remove_tale_flow para enviar
     #a mensagem até o datapath(switch) 
     ##############################################################
-    def remove_flows(self, datapath, table_id):
-        
+    def remove_flows(self, datapath, table_id):        
         parser = datapath.ofproto_parser
         ofproto = datapath.ofproto
-
         empty_match = parser.OFPMatch()
         instructions = []
         
@@ -1100,9 +1064,7 @@ class ProjectController(app_manager.RyuApp):
     #ADICONADO 25/09/2018
     #Função retorna o valor para remover tabelas 
     ##############################################################
-    def remove_table_flows(self, datapath, table_id, match, instructions):
-                
-        #print "dp remove_tables_flows", dp
+    def remove_table_flows(self, datapath, table_id, match, instructions):        
         ofproto = datapath.ofproto
 
         #OFPFlowMod(datapath, cookie=0, cookie_mask=0, table_id=0, command=0, idle_timeout=0, hard_timeout=0, priority=32768 buffer_id=4294967295, out_port=0, out_group=0, flags=0, match=None, instructions=None
@@ -1115,6 +1077,5 @@ class ProjectController(app_manager.RyuApp):
                 ofproto.OFPP_ANY, 0,
                 match, instructions)
                 #ofproto.OFPG_ANY para grupos
-
         return flow_mod
     ##############################################################      
