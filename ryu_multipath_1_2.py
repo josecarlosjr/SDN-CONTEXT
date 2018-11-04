@@ -12,13 +12,9 @@ from ryu.app.wsgi import ControllerBase
 from ryu.topology import event, switches
 from termcolor import colored
 from collections import defaultdict
-from operator import itemgetter
-from operator import attrgetter
-import os
-import random
-import time, copy
+from operator import itemgetter, attrgetter
+import os, random, time, copy
 from datetime import datetime
-
 
 MAX_PATHS = 2
 
@@ -30,7 +26,6 @@ IP_4 = '192.168.4.4'
 MAX_BAND = 800 #Mbps
 
 adjacency = defaultdict(lambda: defaultdict(lambda: None))
-
 ####################################
 
 class ProjectController(app_manager.RyuApp):
@@ -264,8 +259,7 @@ class ProjectController(app_manager.RyuApp):
     def port_desc_stats_reply_handler(self, ev):
         switch = ev.msg.datapath
         for p in ev.msg.body:
-            self.bandwidths[switch.id][p.port_no] = p.curr_speed
-    
+            self.bandwidths[switch.id][p.port_no] = p.curr_speed    
     
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
     def _packet_in_handler(self, ev):
@@ -335,8 +329,7 @@ class ProjectController(app_manager.RyuApp):
         out = parser.OFPPacketOut(
             datapath=datapath, buffer_id=msg.buffer_id, in_port=in_port,
             actions=actions, data=data)
-        datapath.send_msg(out)
-        
+        datapath.send_msg(out)        
 
     @set_ev_cls(event.EventSwitchEnter)
     def switch_enter_handler(self, ev):
@@ -410,8 +403,7 @@ class ProjectController(app_manager.RyuApp):
                 priority=0, instructions=inst)
         
         datapath.send_msg(mod)
-     ######################################################################       
-            
+     ######################################################################           
 
 #===============================================================================================
 
@@ -486,7 +478,6 @@ class ProjectController(app_manager.RyuApp):
         body = ev.msg.body
         dpid = ev.msg.datapath.id
         datapath = ev.msg.datapath
-        
         #contador de segundos
         t = time.localtime().tm_sec
         #print colored(t,'green')
@@ -496,7 +487,7 @@ class ProjectController(app_manager.RyuApp):
         #SELECIONA PORTA 1
         if dpid == 1:
             for stat in sorted(body, key=attrgetter('port_no')):
-
+                #Statement para porta 1
                 if stat.port_no == 1:
                     self.logger.info('switch             '
                             'Port_no         '
@@ -539,16 +530,14 @@ class ProjectController(app_manager.RyuApp):
                     print
                     # Calculo de banda para bytes transmitidos (tx_bytes)
                     # Se o valor bytes transmitidos iniciais forem 0
-                    if tx_ini_1_2 == 0: tx_ini_1_2 = stat.tx_bytes  # valor inicial bytes armazenado
-                    
+                    if tx_ini_1_2 == 0: tx_ini_1_2 = stat.tx_bytes  # valor inicial bytes armazenado                    
                     tx_fin_1_2 = stat.tx_bytes
                     band_1_2 = (tx_fin_1_2-tx_ini_1_2)*8
                     result_1_2 = int(band_1_2/1048576)
                     tx_ini_1_2 = tx_fin_1_2
                     
                     #Calculo de banda para bytes recebidos (rx_bytes)
-                    if rx_ini_1_2 == 0: rx_ini_1_2 = stat.rx_bytes
-                    
+                    if rx_ini_1_2 == 0: rx_ini_1_2 = stat.rx_bytes                    
                     rx_fin_1_2 = stat.rx_bytes
                     band_rx_1_2 = (rx_fin_1_2-rx_ini_1_2)*8
                     result_rx_1_2 = int(band_rx_1_2/1048576)
@@ -630,18 +619,15 @@ class ProjectController(app_manager.RyuApp):
                     print
                     # Calculo de banda para bytes transmitidos
                     # Se o valor bytes transmitidos iniciais forem 0
-                    if tx_ini_2_2 == 0: tx_ini_2_2 = stat.tx_bytes  # valor inicial bytes armazenado
-                    
+                    if tx_ini_2_2 == 0: tx_ini_2_2 = stat.tx_bytes  # valor inicial bytes armazenado                    
                     tx_fin_2_2 = stat.tx_bytes                    
                     band_2_2 = (tx_fin_2_2-tx_ini_2_2)*8
-                    result_2_2 = int(band_2_2/1048576)
-                    #print((int(band/1048576)),  'Mbit/s')
+                    result_2_2 = int(band_2_2/1048576)                    
                     tx_ini_2_2 = tx_fin_2_2
 
                     #Calculo de banda para bytes recebidos
                     #Se o valor de bytes recebidos for 0 
-                    if rx_ini_2_2 == 0: rx_ini_2_2 = stat.rx_bytes  # valor inicial bytes armazenado
-                    
+                    if rx_ini_2_2 == 0: rx_ini_2_2 = stat.rx_bytes  # valor inicial bytes armazenado                    
                     rx_fin_2_2 = stat.rx_bytes
                     band_rx_2_2 = (rx_fin_2_2-rx_ini_2_2)*8
                     result_rx_2_2 = int(band_rx_2_2/1048576)
@@ -1038,8 +1024,7 @@ class ProjectController(app_manager.RyuApp):
         if msg.desc.state == ofp.OFPPS_LIVE: pass
         if msg.desc.state == ofp.OFPPC_NO_PACKET_IN: pass
         else:
-            reason = 'UNKNOWN'
-        
+            reason = 'UNKNOWN'        
     ##############################################################
 
     #ADICIONADO 25/09/2018
@@ -1050,8 +1035,7 @@ class ProjectController(app_manager.RyuApp):
         parser = datapath.ofproto_parser
         ofproto = datapath.ofproto
         empty_match = parser.OFPMatch()
-        instructions = []
-        
+        instructions = []        
         flow_mod = self.remove_table_flows(datapath, 
                 table_id, 
                 empty_match, 
@@ -1066,7 +1050,6 @@ class ProjectController(app_manager.RyuApp):
     ##############################################################
     def remove_table_flows(self, datapath, table_id, match, instructions):        
         ofproto = datapath.ofproto
-
         #OFPFlowMod(datapath, cookie=0, cookie_mask=0, table_id=0, command=0, idle_timeout=0, hard_timeout=0, priority=32768 buffer_id=4294967295, out_port=0, out_group=0, flags=0, match=None, instructions=None
 
         flow_mod = datapath.ofproto_parser.OFPFlowMod(datapath, 0, 0, table_id,
