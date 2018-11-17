@@ -1,5 +1,4 @@
 #-*- coding: utf-8 -*-
-
 from ryu.base import app_manager
 from ryu.controller import mac_to_port, ofp_event
 from ryu.controller.handler import CONFIG_DISPATCHER, MAIN_DISPATCHER, DEAD_DISPATCHER, set_ev_cls
