@@ -99,7 +99,7 @@ class ProjectController(app_manager.RyuApp):
         self.eventos = []
         ##################################################
 
-    #Deep Field Search
+    #depth-first search
     def get_paths(self, src, dst):
         '''
         Get all paths from src to dst using DFS (DeeP Field Search) algorithm    
