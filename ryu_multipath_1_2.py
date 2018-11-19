@@ -223,7 +223,7 @@ class ProjectController(app_manager.RyuApp):
         return paths_with_ports[0][src][1]
 
     def add_flow(self, datapath, priority, match, actions, buffer_id=None):
-        # print "Adding flow ", match, actions
+        
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
 
@@ -240,8 +240,6 @@ class ProjectController(app_manager.RyuApp):
 
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
     def _switch_features_handler(self, ev):
-        global dp
-
         #print "switch_features_handler is called"
         datapath = ev.msg.datapath
         #dp = ev.msg.datapath
@@ -271,7 +269,7 @@ class ProjectController(app_manager.RyuApp):
         pkt = packet.Packet(data=msg.data)
         eth = pkt.get_protocol(ethernet.ethernet)
         arp_pkt = pkt.get_protocol(arp.arp)
-        pkt_icmp = pkt.get_protocol(icmp.icmp)
+        #pkt_icmp = pkt.get_protocol(icmp.icmp)
         
         # avoid broadcast from LLDP
         if eth.ethertype == 35020:
@@ -478,7 +476,7 @@ class ProjectController(app_manager.RyuApp):
         dpid = ev.msg.datapath.id
         datapath = ev.msg.datapath
         #contador de segundos
-        t = time.localtime().tm_sec
+        #t = time.localtime().tm_sec
         #print colored(t,'green')
 
         ################################################################################################
