@@ -1270,23 +1270,19 @@ class ProjectController(app_manager.RyuApp):
             #armazena o endereço Mac das insterfaces 2 e 3 dos datapath's
             #eth_src
             #if C == 1:
-            if src_id == 1:
-                ip_src = IP_1
+            if src_id == 1: ip_src = IP_1
                 #if msg.desc.name == 's1_POP-eth2': eth_src = msg.desc.hw_addr
                 #if msg.desc.name == 's1_POP-eth3': eth_src = msg.desc.hw_addr
              #   print ip_src, "IP 1 src"
-            elif src_id== 2:
-                ip_src = IP_2
+            elif src_id== 2: ip_src = IP_2
             #        if msg.desc.name == 's2_FUNDAJ-eth2': eth_src = msg.desc.hw_addr
             #        if msg.desc.name == 's2_FUNDAJ-eth3': eth_src = msg.desc.hw_addr
             #    print ip_src, "IP 2 src"
-            elif src_id == 3:
-                ip_src = IP_3
+            elif src_id == 3: ip_src = IP_3
             #        if msg.desc.name == 's3_CPOR-eth2': eth_src = msg.desc.hw_addr
             #        if msg.desc.name == 's3_CPOR-eth3': eth_src = msg.desc.hw_addr
             #    print ip_src, "IP 3 src"
-            elif src_id == 4:
-                ip_src = IP_4
+            elif src_id == 4: ip_src = IP_4
             #        if msg.desc.name == 's4_IFPE-eth2': eth_src = msg.desc.hw_addr
             #        if msg.desc.name == 's4_IFPE-eth3': eth_src = msg.desc.hw_addr
             #    print ip_src, "IP 4 src"
@@ -1295,23 +1291,19 @@ class ProjectController(app_manager.RyuApp):
             #armazena o endereço Mac das insterfaces 2 e 3 dos datapath's
             #eth_dst    
             #if C == 2:
-            if dst_id == 1:
-                ip_dst = IP_1
+            if dst_id == 1: ip_dst = IP_1
             #        if msg.desc.name == 's1_POP-eth2': eth_dst = msg.desc.hw_addr
             #        if msg.desc.name == 's1_POP-eth3': eth_dst = msg.desc.hw_addr
             #    print ip_dst, "IP_1 dst"
-            elif dst_id == 2:
-                ip_dst = IP_2
+            elif dst_id == 2: ip_dst = IP_2
             #        if msg.desc.name == 's2_FUNDAJ-eth2': eth_dst = msg.desc.hw_addr
             #        if msg.desc.name == 's2_FUNDAJ-eth3': eth_dst = msg.desc.hw_addr
             #    print ip_dst, "IP_2 dst"
-            elif dst_id == 3:
-                ip_dst = IP_3
+            elif dst_id == 3: ip_dst = IP_3
             #        if msg.desc.name == 's3_CPOR-eth2': eth_dst = msg.desc.hw_addr
             #        if msg.desc.name == 's3_CPOR-eth3': eth_dst = msg.desc.hw_addr
             #    print ip_dst, "IP_3"
-            elif dst_id == 4:
-                ip_dst = IP_4
+            elif dst_id == 4: ip_dst = IP_4
             #        if msg.desc.name == 's4_IFPE-eth2': eth_dst = msg.desc.hw_addr
             #        if msg.desc.name == 's4_IFPE-eth3': eth_dst = msg.desc.hw_addr
             #    print ip_dst, "IP_4 dst"
@@ -1324,7 +1316,7 @@ class ProjectController(app_manager.RyuApp):
                     for datapath in self.datapath_list.values():
                         if datapath.id == src_id: src = datapath
                         if datapath.id == dst_id: dst = datapath
-                    print '\033[1;42m Redirecionando o Tráfego\033[1;m'
+                    #print '\033[1;42m Redirecionando o Tráfego\033[1;m'
                     
                     #REMOVE LINHAS DE FLUXOS
                     self.send_flow_stats_request(src)
@@ -1340,8 +1332,6 @@ class ProjectController(app_manager.RyuApp):
                     #        src.ofproto.OFPP_ANY, src.ofproto.OFPP_ANY, 0,
                     #        0, match, inst)
                     #src.send_msg(mod)
-
-
                     #REMOVE TABELA 0
                     #self.remove_flows(src, 0)#chama a função para remover fluxo do dp adjacente
                     #self.remove_flows(dst, 0)#chama a função para remover fluxo do dp adjacente
