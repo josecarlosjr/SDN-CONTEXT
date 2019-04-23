@@ -491,6 +491,7 @@ class ProjectController(app_manager.RyuApp):
 
     @set_ev_cls(ofp_event.EventOFPPortStatsReply, MAIN_DISPATCHER)
     def _port_stats_reply_handler(self, ev):
+        start_time = time.time()
         global c, b, PL, PL1_3
         ####dp1
         global band_1_1, result_1_1, band_rx_1_1, result_rx_1_1, tx_ini_1_1, tx_fin_1_1, rx_ini_1_1, rx_fin_1_1 #dp 1 port 1
@@ -794,7 +795,7 @@ class ProjectController(app_manager.RyuApp):
                             stat.rx_bytes, result_rx_3_2, stat.tx_bytes, result_3_2)
                             #stat.rx_packets, stat.tx_packets)
                     print
-                    L3_2 = (tx_3_2_packet - rx_2_3_packet)/stat.tx_packets
+                    #L3_2 = (tx_3_2_packet - rx_2_3_packet)/stat.tx_packets
                     # Calculo de banda para bytes transmitidos (tx_bytes)
                     # Se o valor bytes transmitidos iniciais forem 0
                     if tx_ini_3_2 == 0: tx_ini_3_2 = stat.tx_bytes  # valor inicial bytes armazenado
@@ -870,7 +871,7 @@ class ProjectController(app_manager.RyuApp):
                     #Se o throuput maior que 80% da banda a porta de saida sera trocada
                     #O Status da porta é modificado e o sentido do fluxo modificado
                     if (throughput3_3 > MAX_BAND*0.8) and c == 0: #variavel c de controle
-                        start_time = time.time()
+                        #start_time = time.time()
                         print '\033[1;31;47m Porta 3 Congestionada\033[1;m'
                         print '\033[1;34;47m Redirecionando o Tráfego\033[1;m'
                         self.send_flow_mod(datapath, stat.port_no, IP_3)
@@ -1521,6 +1522,7 @@ class ProjectController(app_manager.RyuApp):
     ############################################################################# 
     @set_ev_cls(ofp_event.EventOFPPortStatus, MAIN_DISPATCHER)
     def port_status_handler(self, ev):
+        start_time = time.time()
         #variaveis usadas nessa função
         global C, src_id, dst_id, src, dst, first_port, last_port, ip_src, ip_dst
         #global mac_addr_1_1, mac_addr_1_2, mac_addr_1_3, mac_addr_2_1, mac_addr_2_2, mac_addr_2_3
@@ -1536,7 +1538,8 @@ class ProjectController(app_manager.RyuApp):
 
         if msg.desc.state == ofp.OFPPS_LINK_DOWN:
             #print "STATE", msg.desc.state
-            start_time = time.time()
+            
+            #start_time = time.time()
             #print dp.id
             print 
             print '\033[1;31;47m Nome da interface:', msg.desc.name, '\033[1;m'
