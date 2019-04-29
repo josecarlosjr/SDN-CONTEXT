@@ -21,7 +21,6 @@ import time, copy
 from datetime import datetime
 import pandas as pd
 
-
 #MAX_PATHS = 2
 
 IP_1 = '192.168.1.1'
@@ -610,14 +609,14 @@ class ProjectController(app_manager.RyuApp):
                     self.logger.info('switch             '
                             'Port_no         '
                             'Rec_bytes          Rec_Banda       '
-                            'Trans_bytes         Trans_banda       '
-                            'Packet_Loss       ')
+                            'Trans_bytes         Trans_banda       ')
+                            #'Packet_Loss       ')
                     self.logger.info('%04x              %8x         '
-                            '%8d       %8d Mbps          %8d       %8d Mbps'
-                            '%8d     ',
+                            '%8d       %8d Mbps          %8d       %8d Mbps',
+                            #'%8d     ',
                             ev.msg.datapath.id, stat.port_no,
-                            stat.rx_bytes, result_rx_1_3, stat.tx_bytes, result_1_3,
-                            L1_3)
+                            stat.rx_bytes, result_rx_1_3, stat.tx_bytes, result_1_3)
+                            #L1_3)
                             
                             #stat.rx_dropped, stat.rx_errors, stat.tx_dropped, stat.tx_errors,
                             #stat.properties[0].collisions, stat.properties[0].rx_crc_err, stat.properties[0].rx_frame_err,
