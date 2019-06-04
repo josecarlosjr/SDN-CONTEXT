@@ -1538,7 +1538,10 @@ class ProjectController(app_manager.RyuApp):
         if msg.desc.state == ofp.OFPPS_LINK_DOWN:
             #print "STATE", msg.desc.state
             
-            #start_time = time.time()
+            start_time_1 = time.time()
+            time_1_2 = start_time_1 - start_time
+            print "tempo de captura e inferencia =", time_1_2
+            
             #print dp.id
             print 
             print '\033[1;31;47m Nome da interface:', msg.desc.name, '\033[1;m'
@@ -1595,8 +1598,8 @@ class ProjectController(app_manager.RyuApp):
                     #self.install_controller(dst)
                     
                     #tempo medido das tabelas apagadas e reescritas
-                    end_time = time.time() - start_time
-                    print "Tempo do cenario 1 ", end_time
+                    end_time = time.time() - start_time_1
+                    print "Tempo de adaptacao do cenario 1 ", end_time
                     
                     #Salva o tempo em um arquivo TXT
                     erased_table_time = open('cenario_1.txt', 'a')
