@@ -1541,6 +1541,12 @@ class ProjectController(app_manager.RyuApp):
             start_time_1 = time.time()
             time_1_2 = start_time_1 - start_time
             print "tempo de captura e inferencia =", time_1_2
+            #Salva o tempo em um arquivo TXT
+            inference = open('cenario_1_inference.txt', 'a')
+            inference.writelines(str(time_1_2))
+            inference.writelines("\n")
+            inference.close()
+            print "tempo de inferencia salvo"
             
             #print dp.id
             print 
@@ -1602,11 +1608,11 @@ class ProjectController(app_manager.RyuApp):
                     print "Tempo de adaptacao do cenario 1 ", end_time
                     
                     #Salva o tempo em um arquivo TXT
-                    erased_table_time = open('cenario_1.txt', 'a')
-                    erased_table_time.writelines(str(end_time))
-                    erased_table_time.writelines("\n")
-                    erased_table_time.close()
-                    print "informações salvas"
+                    adaptation = open('cenario_1.txt', 'a')
+                    adaptation.writelines(str(end_time))
+                    adaptation.writelines("\n")
+                    adaptation.close()
+                    print "tempo de adaptacao salvo"
         else:
             reason = 'UNKNOWN'
             pass
