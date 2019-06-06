@@ -1534,10 +1534,8 @@ class ProjectController(app_manager.RyuApp):
         parser = dp.ofproto_parser
         if msg.desc.state == ofp.OFPPR_ADD:
             print 'link adicionado'
-
         if msg.desc.state == ofp.OFPPS_LINK_DOWN:
-            #print "STATE", msg.desc.state
-            
+            #print "STATE", msg.desc.state            
             start_time_1 = time.time()
             time_1_2 = start_time_1 - start_time
             print "tempo de captura e inferencia =", time_1_2
