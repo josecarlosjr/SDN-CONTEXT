@@ -1020,4 +1020,637 @@ class ProjectController(app_manager.RyuApp):
                     rx_ini_4_3 = rx_fin_4_3
     
         
+    ###############################################################################################
+    ###############################################################################################
+    #ADICIONADO 24/10/2018
+    #FUNCAO PARA MODIFICAR O FLUXO CENARIO 02
+    def send_flow_mod(self, datapath, out_ports, ip_n):
+
+        #Variavel de tempo inicial para a remoção das linhas de fluxos
+        #start = time.time() 
+                
+        ofp = datapath.ofproto
+        ofp_parser = datapath.ofproto_parser
+        
+        cookie = cookie_mask = 0
+        table_id = 0
+        idle_timeout = hard_timeout = 0
+        priority = 32766
+        importance = 0
+        buffer_id = ofp.OFP_NO_BUFFER
+         
+        ##########################################################################################
+        #Match field (de acordo com a tabela de fluxo 0)
+        match_ip = ofp_parser.OFPMatch(eth_type=0x800, ipv4_src=ip_n, ipv4_dst='192.168.1.1')
+        match_arp = ofp_parser.OFPMatch(eth_type=0x806, arp_spa=ip_n, arp_tpa='192.168.1.1')
+        ##########################################################################################
+        #remove fluxo com match para ipv4
+        actions = [ofp_parser.OFPActionOutput(ofp.OFPP_NORMAL, 0)]
+        inst = [ofp_parser.OFPInstructionActions(ofp.OFPIT_APPLY_ACTIONS,
+            actions)]
+       #OFPFC_DELETE para deletar
+        req = ofp_parser.OFPFlowMod(datapath, cookie, cookie_mask,
+                table_id, ofp.OFPFC_DELETE,
+                idle_timeout, hard_timeout,
+                priority, buffer_id,
+                ofp.OFPP_ANY, ofp.OFPG_ANY,
+                ofp.OFPFF_SEND_FLOW_REM,
+                importance,
+                match_ip, inst)
+        datapath.send_msg(req)
+        ###########################################################################################
+        #remove fluxo com match para arp
+        actions = [ofp_parser.OFPActionOutput(ofp.OFPP_NORMAL, 0)]
+        inst = [ofp_parser.OFPInstructionActions(ofp.OFPIT_APPLY_ACTIONS, 
+            actions)]
+        #OFPFC_DELETE 
+        req2 = ofp_parser.OFPFlowMod(datapath, cookie, cookie_mask,
+                table_id, ofp.OFPFC_DELETE,
+                idle_timeout, hard_timeout,
+                priority, buffer_id,
+                ofp.OFPP_ANY, ofp.OFPG_ANY,
+                ofp.OFPFF_SEND_FLOW_REM,
+                importance,
+                match_arp, inst)
+        datapath.send_msg(req2)
+        ############################################################################################
+        #Adiciona um novo fluxo apontando para outra porta
+        if out_ports == 3: out_ports = out_ports - 1
+        elif out_ports == 2: out_ports +=1
+        else: pass
+        
+        actions = [ofp_parser.OFPActionOutput(out_ports)]
+
+        self.add_flow(datapath, 32767, match_ip, actions)
+        self.add_flow(datapath, 32767, match_arp, actions)
+
+        #variavel de tempo para medir o tempo de atualização de fluxos
+        #tempo final - tempo inicial
+        #end_time = time.time() - start
+        #print "Tempo de tabelas de fluxos modificadas ", end_time
+
+        #Salva o tempo em um arquivo TXT
+        #flow_mod_time = open('flow_mod_time.txt', 'a')
+        #flow_mod_time.writelines(str(end_time))
+        #flow_mod_time.writelines("\n")
+        #flow_mod_time.close()
+        #print "informações salvas"
+
+    #############################################################################################
+    ##ADICONANDO A GROUP TABLE CENARIO 03?
+    def send_features_request(self, datapath):
+        ofp_parser = datapath.ofproto_parser
+        req = ofp_parser.OFPFeaturesRequest(datapath)
+        datapath.send_msg(req)
     
+    #CENARIO 03?
+    @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
+    def switch_features_handler(self, ev):
+        msg = ev.msg
+        datapath = ev.msg.datapath
+        ofproto = datapath.ofproto
+        parser = datapath.ofproto_parser
+        cookie = cookie_mask = 0
+        table_id = 0
+        idle_timeout = hard_timeout = 0
+        priority = 32767
+        importance = 0
+        buffer_id = ofproto.OFP_NO_BUFFER
+        
+        port_1 = 2
+        queue_1 = parser.OFPActionSetQueue(0)
+        actions_1 = [queue_1, parser.OFPActionOutput(port_1)]
+
+        port_2 = 2
+        queue_2 = parser.OFPActionSetQueue(0)
+        actions_2 = [queue_2, parser.OFPActionOutput(port_2)]
+
+        weight_1 = 10
+        weight_2 = 90
+
+        watch_port = ofproto_v1_4.OFPP_ANY
+        watch_group = ofproto_v1_4.OFPQ_ALL
+
+        buckets = [
+                parser.OFPBucket(weight_1, watch_port, watch_group, actions_1),
+                parser.OFPBucket(weight_2, watch_port, watch_group, actions_2)]
+
+        group_id = 50
+        req = parser.OFPGroupMod(datapath, datapath.ofproto.OFPFC_ADD,
+                datapath.ofproto.OFPGT_SELECT, group_id, buckets)
+        datapath.send_msg(req)
+    ###############################################################################################
+    
+
+    ###############################################################################################
+    #REQUISICAO PARA LINHAS DE FLUXOS CENARIO 01
+    def send_flow_stats_request(self, datapath):
+        ofp = datapath.ofproto
+        ofp_parser = datapath.ofproto_parser
+
+        cookie = cookie_mask = 0
+        #REQUISICAO PARA LINHA DE FLUXO MATCH IP
+        match_ip = ofp_parser.OFPMatch(eth_type=0x800)
+        req = ofp_parser.OFPFlowStatsRequest(datapath, 0,
+                ofp.OFPTT_ALL,
+                ofp.OFPP_ANY, ofp.OFPG_ANY,
+                cookie, cookie_mask,
+                match_ip)
+        datapath.send_msg(req)
+        #REQUISICAO PARA LINHA DE FLUXO MATCH ARP
+        match_arp = ofp_parser.OFPMatch(eth_type=0x806)
+        req = ofp_parser.OFPFlowStatsRequest(datapath, 0,
+                ofp.OFPTT_ALL,
+                ofp.OFPP_ANY, ofp.OFPG_ANY,
+                cookie, cookie_mask,
+                match_arp)
+        datapath.send_msg(req)
+    
+    ###################################################################################################3
+    #RESPOSTA E EXIBICAO PARA REQUISICAO DE LINHAS DE FLUXOS CENARIO 01
+    @set_ev_cls(ofp_event.EventOFPFlowStatsReply, MAIN_DISPATCHER)
+    def flow_stats_reply_handler(self, ev):
+        global src, dst, first_port, last_port, ipDFrame_src, arpFrame_src, ipFrame_dst, arpFrame_dst, resultado
+        #SRC
+        ofp_src = src.ofproto
+        ofp_parser_src = src.ofproto_parser
+        buffer_id_src = ofp_src.OFP_NO_BUFFER
+        #DST
+        ofp_dst = dst.ofproto
+        ofp_parser_dst = dst.ofproto_parser
+        buffer_id_dst = ofp_dst.OFP_NO_BUFFER
+        ######################################
+        cookie = cookie_mask = 0
+        table_id = 0
+        idle_timeout = hard_timeout = 0
+        priority = 32766
+        importance = 0
+        ips = [ip_src, ip_dst]                
+        flows = []        
+        #for stat in ev.msg.body:
+        if ev.msg.datapath.id == src.id:
+            for stat in sorted(ev.msg.body, key=attrgetter('match')):
+                flows.append('table_id=%s '
+                        'duration_sec=%d duration_nsec=%d '
+                        'priority=%d '
+                        'idle_timeout=%d hard_timeout=%d flags=0x%04x '
+                        'importance=%d cookie=%d packet_count=%d '
+                        'byte_count=%d match=%s instructions=%s' %
+                        (stat.table_id,
+                            stat.duration_sec, stat.duration_nsec,
+                            stat.priority,
+                            stat.idle_timeout, stat.hard_timeout,
+                            stat.flags, stat.importance,
+                            stat.cookie, stat.packet_count, stat.byte_count,
+                            stat.match, stat.instructions))
+                #self.logger.info('FlowStats: %s', flows)
+                #DELETE/MODIFICA LINHAS DE FLUXO DO SRC PARA IP                
+                if stat.match['eth_type'] == 2048 and stat.instructions[0].actions[0].port == first_port:
+                    #Cria um DataFrame para armazenar linhas de fluxos que serão deletadas
+                    self.ipDFrame_src = self.ipDFrame_src.append(pd.DataFrame({
+                        'SRC': [stat.match['ipv4_src']],
+                        'DST': [stat.match['ipv4_dst']],
+                        'PORT':[stat.instructions[0].actions[0].port]}), ignore_index=True)
+                    #print colored('ipDFrame_src','blue')
+                    #print(self.ipDFrame_src)
+                    match_ip = ofp_parser_src.OFPMatch(eth_type=0x800, ipv4_dst=stat.match['ipv4_dst'],
+                            ipv4_src=stat.match['ipv4_src'])
+                    actions = [ofp_parser_src.OFPActionOutput(ofp_src.OFPP_NORMAL, 0)]
+                    inst = [ofp_parser_src.OFPInstructionActions(ofp_src.OFPIT_APPLY_ACTIONS,
+                        actions)]
+                    #DELETA A LINHAS DE FLUXOS ARMAZENADAS
+                    req = ofp_parser_src.OFPFlowMod(src, cookie, cookie_mask,
+                            table_id, ofp_src.OFPFC_DELETE,
+                            idle_timeout, hard_timeout,
+                            priority, buffer_id_src,
+                            ofp_src.OFPP_ANY, ofp_src.OFPG_ANY,
+                            ofp_src.OFPFF_SEND_FLOW_REM,
+                            importance, match_ip, inst)
+                    src.send_msg(req)
+                    #ADICIONA UM CAMINHO ENTRE EXTREMIDADES P\ O DP SRC
+                    #print "EXTREMIDADE DP SRC"
+                    #match_ip = ofp_parser_src.OFPMatch(eth_type=0x800, ipv4_src=ip_src, ipv4_dst=ip_dst)
+                    #ESCOLHE A PORTA UP
+                    if first_port == 2: out_put = first_port + 1
+                    elif first_port == 3: out_put = first_port - 1
+                    else: pass
+
+                    #actions = [ofp_parser_src.OFPActionOutput(out_put)]
+                    #inst = [ofp_parser_src.OFPInstructionActions(ofp_src.OFPIT_APPLY_ACTIONS,
+                    #    actions)]
+                    #req = ofp_parser_src.OFPFlowMod(src, cookie, cookie_mask,
+                    #        table_id, ofp_src.OFPFC_ADD,
+                    #        idle_timeout, hard_timeout,
+                    #        priority, buffer_id_src,
+                    #        ofp_src.OFPP_ANY, ofp_src.OFPG_ANY,
+                    #        ofp_src.OFPFF_SEND_FLOW_REM,
+                    #        importance, match_ip, inst)
+                    #src.send_msg(req)
+                    #self.add_flow(src, 32767, match_ip, actions)
+                    
+                    #MELHORAR
+                    #VERIFICA SE TEM CAMINHO PARA DST 192.168.1.1 SE N ADICIONA UM 
+                    #if stat.match['ipv4_dst'] == '192.168.1.1' and stat.instructions[0].actions[0].port == out_put: 
+                    #    print "BREAK"
+                    #    break
+                    if src.id == 1:
+                        print "POP SRC IP"
+                        dest_ip = ofp_parser_src.OFPMatch(eth_type=0x800, ipv4_src='192.168.1.1', ipv4_dst=stat.match['ipv4_dst'])
+                        actions = [ofp_parser_src.OFPActionOutput(out_put)]
+                        inst = [ofp_parser_src.OFPInstructionActions(ofp_src.OFPIT_APPLY_ACTIONS,
+                            actions)]
+                        req = ofp_parser_src.OFPFlowMod(src, cookie, cookie_mask,
+                                table_id, ofp_src.OFPFC_ADD,
+                                idle_timeout, hard_timeout,
+                                32767, buffer_id_src,
+                                ofp_src.OFPP_ANY, ofp_src.OFPG_ANY,
+                                0,
+                                1, dest_ip, inst)
+                        src.send_msg(req)
+                        pass
+                    elif stat.match['ipv4_dst'] == '192.168.1.1' and stat.instructions[0].actions[0].port != out_put:
+                        print "SRC IP 192.168.1.1 adicionado"
+                        dest_ip = ofp_parser_src.OFPMatch(eth_type=0x800, ipv4_src=ip_src, ipv4_dst='192.168.1.1')
+                        actions = [ofp_parser_src.OFPActionOutput(out_put)]
+                        #self.add_flow(src, 32767, dest_ip, actions)
+                        inst = [ofp_parser_src.OFPInstructionActions(ofp_src.OFPIT_APPLY_ACTIONS,
+                            actions)]                        
+                        req = ofp_parser_src.OFPFlowMod(src, cookie, cookie_mask,
+                                table_id, ofp_src.OFPFC_ADD,
+                                idle_timeout, hard_timeout,
+                                32767, buffer_id_src,
+                                ofp_src.OFPP_ANY, ofp_src.OFPG_ANY,
+                                0,                                
+                                1, dest_ip, inst)
+                        #ofp_src.OFPFF_SEND_FLOW_REM
+                        src.send_msg(req)
+                #MODIFICA LINHAS DE FLUXO PARA ARP SRC
+                elif stat.match['eth_type'] == 2054 and stat.instructions[0].actions[0].port == first_port:
+                    #Cria um DF com informacoes ARP de ip e portas que serã deletados
+                    self.arpDFrame_src = self.arpDFrame_src.append(pd.DataFrame({
+                        'SPA': [stat.match['arp_spa']],
+                        'TPA': [stat.match['arp_tpa']],
+                        'PORT':[stat.instructions[0].actions[0].port]}), ignore_index=True)                    
+                    match_arp = ofp_parser_src.OFPMatch(eth_type=0x806, arp_tpa=stat.match['arp_tpa'],
+                            arp_spa=stat.match['arp_spa'])
+                    actions = [ofp_parser_src.OFPActionOutput(ofp_src.OFPP_NORMAL, 0)]
+                    inst = [ofp_parser_src.OFPInstructionActions(ofp_src.OFPIT_APPLY_ACTIONS,
+                        actions)]
+                    #DELETA A LINHAS DE FLUXOS ARMAZENADAS
+                    req = ofp_parser_src.OFPFlowMod(src, cookie, cookie_mask,
+                            table_id, ofp_src.OFPFC_DELETE,
+                            idle_timeout, hard_timeout,
+                            1, buffer_id_src,
+                            ofp_src.OFPP_ANY, ofp_src.OFPG_ANY,
+                            ofp_src.OFPFF_SEND_FLOW_REM,
+                            importance, match_arp, inst)
+                    src.send_msg(req)
+                    #ADICIONA UM CAMINHO ENTRE EXTREMIDADES P\ O DP SRC
+                    #print "EXTREMIDADE DP ARP SRC"
+                    #match_arp = ofp_parser_src.OFPMatch(eth_type=0x806, arp_spa=ip_src, arp_tpa=ip_dst)
+                    #ESCOLHE A PORTA UP
+                    if first_port == 2: out_put = first_port + 1
+                    elif first_port == 3: out_put = first_port - 1
+                    else: pass 
+
+                    #actions = [ofp_parser_src.OFPActionOutput(out_put)]
+                    #self.add_flow(src, 32767, match_arp, actions)
+                    #inst = [ofp_parser_src.OFPInstructionActions(ofp_src.OFPIT_APPLY_ACTIONS,
+                    #    actions)]
+                    #req = ofp_parser_src.OFPFlowMod(src, cookie, cookie_mask,
+                    #        table_id, ofp_src.OFPFC_ADD,
+                    #        idle_timeout, hard_timeout,
+                    #        priority, buffer_id_src,
+                    #        ofp_src.OFPP_ANY, ofp_src.OFPG_ANY,
+                    #        ofp_src.OFPFF_SEND_FLOW_REM,
+                    #        importance, match_arp, inst)
+                    #src.send_msg(req)
+                    #MELHORAR
+                    #VERIFICA SE TEM CAMINHO PARA DST 192.168.1.1 N ADICIONA UM
+                    #if stat.match['arp_tpa'] == '192.168.1.1' and stat.instructions[0].actions[0].port == out_put: 
+                    #    print "BREAK"
+                    #    break
+                    if src.id == 1:
+                        print "POP SRC ARP"
+                        dest_ip = ofp_parser_src.OFPMatch(eth_type=0x806, arp_spa='192.168.1.1', arp_tpa=stat.match['arp_tpa'])
+                        actions = [ofp_parser_src.OFPActionOutput(out_put)]
+                        inst = [ofp_parser_src.OFPInstructionActions(ofp_src.OFPIT_APPLY_ACTIONS,
+                            actions)]
+                        req = ofp_parser_src.OFPFlowMod(src, cookie, cookie_mask,
+                                table_id, ofp_src.OFPFC_ADD,
+                                idle_timeout, hard_timeout,
+                                32767, buffer_id_src,
+                                ofp_src.OFPP_ANY, ofp_src.OFPG_ANY,
+                                0,
+                                1, dest_ip, inst)
+                        src.send_msg(req)
+                        continue
+                    elif stat.match['arp_tpa'] == '192.168.1.1' and stat.instructions[0].actions[0].port != out_put:
+                        print "SRC ARP 192.168.1.1"
+                        dest_ip = ofp_parser_src.OFPMatch(eth_type=0x806, arp_spa=ip_src, arp_tpa='192.168.1.1')
+                        actions = [ofp_parser_src.OFPActionOutput(out_put)]
+                        #self.add_flow(src, 32767, dest_ip, actions)
+                        inst = [ofp_parser_src.OFPInstructionActions(ofp_src.OFPIT_APPLY_ACTIONS,
+                            actions)]
+                        
+                        req = ofp_parser_src.OFPFlowMod(src, cookie, cookie_mask,
+                                table_id, ofp_src.OFPFC_ADD,
+                                idle_timeout, hard_timeout,
+                                32767, buffer_id_src,
+                                ofp_src.OFPP_ANY, ofp_src.OFPG_ANY,
+                                0,
+                                1, dest_ip, inst)
+                        src.send_msg(req)
+
+                #elif stat.match['eth_type'] != 2048:
+                #    print "quantas vezes esta linha iaparece"
+                else: continue
+
+        #DATAPATH DE DST
+        elif ev.msg.datapath.id == dst.id:
+            for stat in sorted(ev.msg.body, key=attrgetter('match')):
+                flows.append('table_id=%s '
+                        'duration_sec=%d duration_nsec=%d '
+                        'priority=%d '
+                        'idle_timeout=%d hard_timeout=%d flags=0x%04x '
+                        'importance=%d cookie=%d packet_count=%d '
+                        'byte_count=%d match=%s instructions=%s' %
+                        (stat.table_id, stat.duration_sec,
+                            stat.duration_nsec, stat.priority,
+                            stat.idle_timeout, stat.hard_timeout,
+                            stat.flags, stat.importance,
+                            stat.cookie, stat.packet_count, stat.byte_count,
+                            stat.match, stat.instructions))
+                #DELETE/MODIFICA LINHAS DE FLUXO DO DST IP
+                if stat.match['eth_type'] == 2048 and stat.instructions[0].actions[0].port == last_port:
+                    #Cria um DF com informações de porta e ip que serao deletados para switch DST
+                    self.ipDFrame_dst = self.ipDFrame_dst.append(pd.DataFrame({
+                        'SRC': [stat.match['ipv4_src']],
+                        'DST': [stat.match['ipv4_dst']],
+                        'PORT': [stat.instructions[0].actions[0].port]}), ignore_index=True)
+                    match_ip = ofp_parser_dst.OFPMatch(eth_type=0x800, ipv4_dst=stat.match['ipv4_dst'],
+                            ipv4_src=stat.match['ipv4_src'])
+                    actions = [ofp_parser_dst.OFPActionOutput(ofp_dst.OFPP_NORMAL, 0)]
+                    inst = [ofp_parser_dst.OFPInstructionActions(ofp_dst.OFPIT_APPLY_ACTIONS,
+                        actions)]
+                    req = ofp_parser_dst.OFPFlowMod(dst, cookie, cookie_mask,
+                            table_id, ofp_dst.OFPFC_DELETE,
+                            idle_timeout, hard_timeout,
+                            priority, buffer_id_dst,
+                            ofp_dst.OFPP_ANY, ofp_dst.OFPG_ANY,
+                            ofp_dst.OFPFF_SEND_FLOW_REM,
+                            importance, match_ip, inst)
+                    dst.send_msg(req)
+                    #ADICIONA UM CAMINHO ENTRE EXTREMIDADES P\ O DP SRC
+                    #print "EXTREMIDADE DP IP DST"
+                    #match_ip = ofp_parser_dst.OFPMatch(eth_type=0x800, ipv4_src=ip_dst, ipv4_dst=ip_src)
+                    #ESCOLHE A PORTA UP
+                    if last_port == 2: out_put = last_port + 1
+                    elif last_port == 3: out_put = last_port - 1
+                    else: pass
+
+                    #actions = [ofp_parser_dst.OFPActionOutput(out_put)]
+                    #self.add_flow(dst, 32767, match_ip, actions)
+                    #inst = [ofp_parser_dst.OFPInstructionActions(ofp_dst.OFPIT_APPLY_ACTIONS,
+                    #    actions)]
+                    #req = ofp_parser_dst.OFPFlowMod(dst, cookie, cookie_mask,
+                    #        table_id, ofp_dst.OFPFC_ADD,
+                    #        idle_timeout, hard_timeout,
+                    #        priority, buffer_id_dst,
+                    #        ofp_dst.OFPP_ANY, ofp_dst.OFPG_ANY,
+                    #        ofp_dst.OFPFF_SEND_FLOW_REM,
+                    #        importance, match_ip, inst)
+                    #dst.send_msg(req)
+
+                    #MELHORAR
+                    #VERIFICA SE TEM CAMINHO P/ DST 192.168.1.1 SE N ADICIONA UM
+                    #if stat.match['ipv4_dst'] == '192.168.1.1' and stat.instructions[0].actions[0].port == out_put: 
+                    #    print "BREAK DST IP"
+                    #    break
+                    if dst.id == 1:
+                        dest_ip = ofp_parser_dst.OFPMatch(eth_type=0x800, ipv4_src='192.168.1.1', ipv4_dst=stat.match['ipv4_src'])
+                        actions = [ofp_parser_dst.OFPActionOutput(out_put)]
+                        inst = [ofp_parser_dst.OFPInstructionActions(ofp_dst.OFPIT_APPLY_ACTIONS,
+                            actions)]
+                        req2 = ofp_parser_dst.OFPFlowMod(dst, cookie, cookie_mask,
+                                table_id, ofp_dst.OFPFC_ADD,
+                                idle_timeout, hard_timeout,
+                                32767, buffer_id_dst,
+                                ofp_dst.OFPP_ANY, ofp_dst.OFPG_ANY,
+                                0,
+                                1, dest_ip, inst)
+                        dst.send_msg(req2)                        
+                    elif stat.match['ipv4_dst'] == '192.168.1.1' and stat.instructions[0].actions[0].port != out_put:
+                        print "DST IP 192.168.1.1"
+                        dest_ip = ofp_parser_dst.OFPMatch(eth_type=0x800, ipv4_src=ip_dst, ipv4_dst='192.168.1.1')
+                        actions = [ofp_parser_dst.OFPActionOutput(out_put)]
+                        #self.add_flow(dst, 32767, dest_ip, actions)
+                        inst = [ofp_parser_dst.OFPInstructionActions(ofp_dst.OFPIT_APPLY_ACTIONS,
+                            actions)]
+                    
+                        req = ofp_parser_dst.OFPFlowMod(dst, cookie, cookie_mask,
+                                table_id, ofp_dst.OFPFC_ADD,
+                                idle_timeout, hard_timeout,
+                                32767, buffer_id_dst,
+                                ofp_dst.OFPP_ANY, ofp_dst.OFPG_ANY,
+                                0,
+                                1, dest_ip, inst)
+                        dst.send_msg(req)
+                    else: pass
+                        #ofp_dst.OFPFF_SEND_FLOW_REM
+                #DELETA/MODIFICA LINHAS DE FLUXOS DO DST ARP
+                elif stat.match['eth_type'] == 2054 and stat.instructions[0].actions[0].port == last_port:
+                    #Cria um DF com informacoes ARP de port e ip q serao deletados para switch DST
+                    self.arpDFrame_dst = self.arpDFrame_dst.append(pd.DataFrame({
+                        'SPA': [stat.match['arp_spa']],
+                        'TPA': [stat.match['arp_tpa']],
+                        'PORT': [stat.instructions[0].actions[0].port]}), ignore_index=True)
+                    match_arp = ofp_parser_dst.OFPMatch(eth_type=0x806, arp_tpa=stat.match['arp_tpa'],
+                            arp_spa=stat.match['arp_spa'])
+                    actions = [ofp_parser_dst.OFPActionOutput(ofp_src.OFPP_NORMAL, 0)]
+                    inst = [ofp_parser_dst.OFPInstructionActions(ofp_dst.OFPIT_APPLY_ACTIONS,
+                        actions)]
+                    req = ofp_parser_dst.OFPFlowMod(dst, cookie, cookie_mask,
+                            table_id, ofp_dst.OFPFC_DELETE,
+                            idle_timeout, hard_timeout,
+                            1, buffer_id_dst,
+                            ofp_dst.OFPP_ANY, ofp_dst.OFPG_ANY,
+                            ofp_dst.OFPFF_SEND_FLOW_REM,
+                            importance, match_arp, inst)
+                    dst.send_msg(req)
+                    #ADICIONA UM CAMINHO ENTRE EXTREMIDADES P\ O DP DST
+                    #print "EXTREMIDADES DP ARP DST"
+                    #match_arp = ofp_parser_dst.OFPMatch(eth_type=0x806, ipv4_src=ip_dst, ipv4_dst=ip_src)
+                    if last_port == 2: out_put = last_port + 1
+                    elif last_port == 3: out_put = last_port - 1
+                    else: pass
+                    
+                    #actions = [ofp_parser_dst.OFPActionOutput(out_put)]
+                    #self.add_flow(dst, 32767, match_arp, actions)
+                    #inst = [ofp_parser_dst.OFPInstructionActions(ofp_dst.OFPIT_APPLY_ACTIONS,
+                    #    actions)]
+                    #req = ofp_parser_dst.OFPFlowMod(dst, cookie, cookie_mask,
+                    #        table_id, ofp_dst.OFPFC_ADD,
+                    #        idle_timeout, hard_timeout,
+                    #        priority, buffer_id_dst,
+                    #        ofp_dst.OFPP_ANY, ofp_dst.OFPG_ANY,
+                    #        ofp_dst.OFPFF_SEND_FLOW_REM,
+                    #        importance, match_arp, inst)
+                    #dst.send_msg(req)
+                    
+                    #################
+                    #if stat.match['arp_tpa'] == '192.168.1.1' and stat.instructions[0].actions[0].port == out_put: 
+                    #    print "BREAK DST ARP"
+                    #    break
+                    if dst.id == 1:
+                        dest_ip = ofp_parser_dst.OFPMatch(eth_type=0x806, arp_spa='192.168.1.1', arp_tpa=stat.match['arp_spa'])
+                        actions = [ofp_parser_dst.OFPActionOutput(out_put)]
+                        inst = [ofp_parser_dst.OFPInstructionActions(ofp_dst.OFPIT_APPLY_ACTIONS,
+                            actions)]
+                        req2 = ofp_parser_dst.OFPFlowMod(dst, cookie, cookie_mask,
+                                table_id, ofp_dst.OFPFC_ADD,
+                                idle_timeout, hard_timeout,
+                                32767, buffer_id_dst,
+                                ofp_dst.OFPP_ANY, ofp_dst.OFPG_ANY,
+                                0,
+                                1, dest_ip, inst)
+                        dst.send_msg(req2)                        
+                    elif stat.match['arp_tpa'] == '192.168.1.1' and stat.instructions[0].actions[0].port != out_put:
+                        print "DST ARP 192.168.1.1"
+                        dest_ip = ofp_parser_dst.OFPMatch(eth_type=0x806, arp_spa=ip_dst, arp_tpa='192.168.1.1')
+                        actions = [ofp_parser_dst.OFPActionOutput(out_put)]
+                        #self.add_flow(dst, 32767, dest_ip, actions)
+                        inst = [ofp_parser_dst.OFPInstructionActions(ofp_dst.OFPIT_APPLY_ACTIONS,
+                            actions)]
+                        
+                        req = ofp_parser_dst.OFPFlowMod(dst, cookie, cookie_mask,
+                                table_id, ofp_dst.OFPFC_ADD,
+                                idle_timeout, hard_timeout,
+                                32767, buffer_id_dst,
+                                ofp_dst.OFPP_ANY, ofp_dst.OFPG_ANY,
+                                0,
+                                1, dest_ip, inst)
+                        #ofp_dst.OFPFF_SEND_FLOW_REM
+                        dst.send_msg(req)       
+                else: pass
+
+    #ADICIONADO 23/09/2018
+    #Exibe o status de portas do switch
+    #classe utilizada ryu.controller.controller.Datapath
+    #ryu.ofproto.ofproto_v1_4_parser.OFPPort
+    #ryu.ofproto.ofproto_v1_4
+    #flags OFPPS_LINK_DOWN
+    ############################################################################# 
+    @set_ev_cls(ofp_event.EventOFPPortStatus, MAIN_DISPATCHER)
+    def port_status_handler(self, ev):
+        #start_time = time.time()
+        start_time = datetime.now()
+        print(start_time.microsecond)
+        #variaveis usadas nessa função
+        global C, src_id, dst_id, src, dst, first_port, last_port, ip_src, ip_dst
+        #global mac_addr_1_1, mac_addr_1_2, mac_addr_1_3, mac_addr_2_1, mac_addr_2_2, mac_addr_2_3
+        #global mac_addr_3_1, mac_addr_3_2, mac_addr_3_3, mac_addr_4_1, mac_addr_4_2, mac_addr_4_3 
+        #eth_src = eth_dst = None
+        
+        msg = ev.msg #armazena a mensagem do evento
+        dp = msg.datapath #dp.id
+        ofp = dp.ofproto
+        parser = dp.ofproto_parser
+        if msg.desc.state == ofp.OFPPR_ADD:
+            print 'link adicionado'
+
+        if msg.desc.state == ofp.OFPPS_LINK_DOWN:
+            #print "STATE", msg.desc.state            
+            #start_time_1 = time.time()
+            start_time_1 = datetime.now()
+            print(start_time_1.microsecond)
+            time_1_2 = start_time_1 - start_time
+            
+            print "tempo de captura de evento =", time_1_2
+            #Salva o tempo em um arquivo TXT
+            captura = open('cenario_1_captura.txt', 'a')
+            captura.writelines(str(time_1_2))
+            captura.writelines("\n")
+            captura.close()
+            print "tempo de inferencia salvo"
+
+            #print dp.id
+            print 
+            print '\033[1;31;47m Nome da interface:', msg.desc.name, '\033[1;m'
+            print '\033[1;31;47m Porta: ', msg.desc.port_no, 'Porta status DOWN\033[1;m'
+            if (C == 0): #Condicional para armazenar o dp e in_port origem primeira iteração 0
+                src_id = dp.id
+                first_port = msg.desc.port_no
+                dst_id = 0
+            elif (C != 0): #Condicional para armazenar o dp e out_port destino apos a primeira iteração
+                dst_id = dp.id
+                last_port = msg.desc.port_no            
+            #if (C > 0 and src and dst and first_port and last_port): ip_src = ip_dst = None #inicia as variaveis             
+            else: pass
+            C += 1 #incrementa a variável de controle
+           
+            #armazena o endereço Mac das insterfaces 2 e 3 dos datapath's
+            #eth_src
+            #if C == 1:
+            if src_id == 1: ip_src = IP_1
+            elif src_id== 2: ip_src = IP_2
+            elif src_id == 3: ip_src = IP_3
+            elif src_id == 4: ip_src = IP_4
+            else: pass
+
+            #armazena o endereço Mac das insterfaces 2 e 3 dos datapath's
+            #eth_dst    
+            #if C == 2:
+            if dst_id == 1: ip_dst = IP_1
+            elif dst_id == 2: ip_dst = IP_2
+            elif dst_id == 3: ip_dst = IP_3
+            elif dst_id == 4: ip_dst = IP_4
+            else: pass
+            
+            if (C == 2):
+                C = 0 #zera a variavel de controle ao alcançar 2
+                print '\033[1;31;47m Deletando tabela de fluxos\033[1;m'
+                if src_id and dst_id:
+                    for datapath in self.datapath_list.values():
+                        if datapath.id == src_id: src = datapath
+                        if datapath.id == dst_id: dst = datapath
+                    #print '\033[1;42m Redirecionando o Tráfego\033[1;m'
+                    
+                    #REMOVE LINHAS DE FLUXOS
+                    self.send_flow_stats_request(src)
+                    self.send_flow_stats_request(dst)
+                    
+                    #self.send_flow_mod(src, first_port, ip_src)
+                    #self.send_flow_mod(dst, last_port, ip_dst)
+                    #DELETE CONTROLLER SRC
+                    #match = src.ofproto_parser.OFPMatch(eth_type=0x88cc)
+                    #actions = [src.ofproto_parser.OFPActionOutput(src.ofproto.OFPP_CONTROLLER, src.ofproto.OFPCML_NO_BUFFER)]
+                    
+                    #REMOVE TABELA 0
+                    #self.remove_flows(src, 0)#chama a função para remover fluxo do dp adjacente
+                    #self.remove_flows(dst, 0)#chama a função para remover fluxo do dp adjacente
+                    #self.install_controller(src)
+                    #self.install_controller(dst)
+                    
+                    #tempo medido das tabelas apagadas e reescritas
+            end_time = time.time() - start_time_1
+            print "Tempo de inferencia ", end_time
+                    
+            #Salva o tempo em um arquivo TXT
+            inference = open('cenario_1_inference.txt', 'a')
+            inference.writelines(str(end_time))
+            inference.writelines("\n")
+            inference.close()
+            #print "tempo de inferencia salvo"
+
+            soma = start_time + start_time_1
+            #Salva a soma capture and inference
+            summe = open('cenario_1_soma.txt', 'a')
+            summe.writelines(str(soma))
+            summe.writelines("\n")
+            summe.close()
+            
+
+        else:
+            reason = 'UNKNOWN'
+            pass
