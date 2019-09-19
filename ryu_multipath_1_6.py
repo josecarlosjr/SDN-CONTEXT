@@ -305,7 +305,7 @@ class ProjectController(app_manager.RyuApp):
             actions=actions, data=data)
         datapath.send_msg(out)
         
-        
+        '''
         ###############################################################################         
         #METODO DO TOPOLOGY DISCOVER
         #USADO DENTRO DO PACKTIN para ser detectado assim
@@ -313,6 +313,7 @@ class ProjectController(app_manager.RyuApp):
 
         #metodo get_host detecta todos os hosts da topologia
         #sera usado para armazenar todos os ips 
+        '''
         host = get_host(self.topology_api_app, None)
         if host[0].ipv4:
             #try, except para tratar de valores vazios 
@@ -464,16 +465,25 @@ class ProjectController(app_manager.RyuApp):
             print '\033[1;31;47m Switch', _id, 'Porta',_port, 'status DOWN\033[1;m'
             d_id = int(_id)            
             _port_no = int(_port)
-            self.ev_port_Mod[d_id] = _port_no            
-            #for i in self.datapath_list.keys():
-            if len(self.ev_port_Mod) > 1: #sera executado 1x
-                #print self.ev_port_Mod 
+            self.ev_port_Mod[d_id] = _port_no 
+            '''
+            aquisicao de ips de origem e destino para criacao de linhas de fluxos
+            a aquisicao das informacoes de dst e src precisam ser armazenadas  
+            separadamente para facilitar o processo de criacao de linhas de fluxos
+            '''
+            for i in self.ip_list:
+                if i == d_id and not ip_src and not ip_dst:
+                    ip_src = self.ip_list[i]
+                    id_src = i
+                elif i == d_id and ip_src and not ip_dst:
+                    ip_dst = self.ip_list[i]
+                    id_dst = i
+                else: pass
+            if len(self.ev_port_Mod) > 1: #sera executado 1x                
                 for i in self.ev_port_Mod: #ok
-                    #print "datapath: ", i 
-                    _port_no = self.ev_port_Mod[i]                       
-                    #print "PORTA", _port_no
-                    if i in self.datapath_list: #ok      
-                        self.send_flow_stats_request(self.datapath_list[i])
+                    _port_no = self.ev_port_Mod[i] #ok           
+                    if i in self.datapath_list:
+                        self.send_flow_stats_request(self.datapath_list[i]) #ok
                     
                
     
@@ -641,7 +651,7 @@ class ProjectController(app_manager.RyuApp):
     #RESPOSTA E EXIBICAO PARA REQUISICAO DE LINHAS DE FLUXOS CENARIO 01
     @set_ev_cls(ofp_event.EventOFPFlowStatsReply, MAIN_DISPATCHER)
     def flow_stats_reply_handler(self, ev):
-        global ipDFrame_src, arpFrame_src, ipFrame_dst, arpFrame_dst, resultado
+        global id_src, id_dst, ip_src, ip_dst, ipDFrame_src, arpFrame_src, ipFrame_dst, arpFrame_dst, resultado
         #print
         #print "DATAPATH ID reply handler: ", ev.msg.datapath.id
         #print "self.ev_port_Mod: ", self.ev_port_Mod
@@ -662,12 +672,14 @@ class ProjectController(app_manager.RyuApp):
                         
         flows = []        
         
+                
         for i in self.ev_port_Mod:
             if i == datapath.id:
                 _port_ = self.ev_port_Mod[i]
-                print "datapath id: ", datapath.id
-                print "port reply: ", _port_
-                print
+                #print "datapath id: ", datapath.id
+                #print "port reply: ", _port_
+                #print
+                
         #if ev.msg.datapath:# == src.id:
         for stat in sorted(ev.msg.body, key=attrgetter('match')):
             flows.append('table_id=%s '
@@ -717,7 +729,19 @@ class ProjectController(app_manager.RyuApp):
                 if _port_ == 2: out_put = _port_ + 1
                 elif _port_ == 3: out_put = _port_ - 1
                 else: pass
-
+                
+'''
+                Cria as linhas de fluxos para o dp origem e para o dp de destino para protocolo ip
+                '''
+                if datapath.id == id_src:
+                    match_ip = ofp_parser_src.OFPMatch(eth_type=0x800, ipv4_src=ip_src, ipv4_dst=ip_dst)
+                    actions = [ofp_parser_src.OFPActionOutput(out_put)]
+                    self.add_flow(datapath, 32766, match_ip, actions)
+                elif datapath.id == id_dst:
+                    match_ip = ofp_parser_src.OFPMatch(eth_type=0x800, ipv4_src=ip_dst, ipv4_dst=ip_src)
+                    actions = [ofp_parser_src.OFPActionOutput(out_put)]
+                    self.add_flow(datapath, 32766, match_ip, actions)
+                else: pass                
                     
                 #MELHORAR
                 #Se um dos switches for o PoP
@@ -736,23 +760,25 @@ class ProjectController(app_manager.RyuApp):
                             0,
                             1, dest_ip, inst)
                     datapath.send_msg(req)
-                    pass
-                elif stat.match['ipv4_dst'] == '192.168.1.1' and stat.instructions[0].actions[0].port != out_put:
-                    print "SRC IP 192.168.1.1 adicionado"
-                    dest_ip = ofp_parser_src.OFPMatch(eth_type=0x800, ipv4_src=stat.match['ipv4_src'], ipv4_dst='192.168.1.1')
-                    actions = [ofp_parser_src.OFPActionOutput(out_put)]
-                    #self.add_flow(src, 32767, dest_ip, actions)
-                    inst = [ofp_parser_src.OFPInstructionActions(ofp_src.OFPIT_APPLY_ACTIONS,
-                        actions)]                        
-                    req = ofp_parser_src.OFPFlowMod(datapath, cookie, cookie_mask,
-                            table_id, ofp_src.OFPFC_ADD,
-                            idle_timeout, hard_timeout,
-                            32767, buffer_id_src,
-                            ofp_src.OFPP_ANY, ofp_src.OFPG_ANY,
-                            0,                                
-                            1, dest_ip, inst)
-                    #ofp_src.OFPFF_SEND_FLOW_REM
-                    datapath.send_msg(req)
+                    
+                    if stat.match['ipv4_dst'] == '192.168.1.1' and stat.instructions[0].actions[0].port != out_put:
+                        print "SRC IP 192.168.1.1 adicionado"
+                        dest_ip = ofp_parser_src.OFPMatch(eth_type=0x800, ipv4_src=stat.match['ipv4_src'], ipv4_dst='192.168.1.1')
+                        actions = [ofp_parser_src.OFPActionOutput(out_put)]
+                        #self.add_flow(src, 32767, dest_ip, actions)
+                        inst = [ofp_parser_src.OFPInstructionActions(ofp_src.OFPIT_APPLY_ACTIONS,
+                            actions)]                        
+                        req = ofp_parser_src.OFPFlowMod(datapath, cookie, cookie_mask,
+                                table_id, ofp_src.OFPFC_ADD,
+                                idle_timeout, hard_timeout,
+                                32767, buffer_id_src,
+                                ofp_src.OFPP_ANY, ofp_src.OFPG_ANY,
+                                0,                                
+                                1, dest_ip, inst)
+                        #ofp_src.OFPFF_SEND_FLOW_REM
+                        datapath.send_msg(req)
+                    else: pass
+                else: pass   
             #MODIFICA LINHAS DE FLUXO PARA ARP SRC
             elif stat.match['eth_type'] == 2054 and stat.instructions[0].actions[0].port == _port_:
                 #Cria um DF com informacoes ARP de ip e portas que serã deletados
@@ -782,7 +808,20 @@ class ProjectController(app_manager.RyuApp):
                 if _port_ == 2: out_put = _port_ + 1
                 elif _port_ == 3: out_put = _port_ - 1
                 else: pass 
-
+                
+                '''
+                Cria as linhas de fluxos para o dp origem e para o dp de destino para protocolo arp
+                '''
+                if datapath.id == id_src:
+                    match_arp = ofp_parser_src.OFPMatch(eth_type=0x806, arp_spa=ip_src, arp_tpa=ip_dst)
+                    actions = [ofp_parser_src.OFPActionOutput(out_put)]
+                    self.add_flow(datapath, 32766, match_arp, actions)
+                elif datapath.id == id_dst:
+                    match_arp = ofp_parser_src.OFPMatch(eth_type=0x806, arp_spa=ip_dst, arp_tpa=ip_src)
+                    actions = [ofp_parser_src.OFPActionOutput(out_put)]
+                    self.add_flow(datapath, 32766, match_arp, actions)
+                else: pass
+                
                 #MELHORAR
                 #VERIFICA SE TEM CAMINHO PARA DST 192.168.1.1 N ADICIONA UM
                 #if stat.match['arp_tpa'] == '192.168.1.1' and stat.instructions[0].actions[0].port == out_put: 
@@ -802,28 +841,35 @@ class ProjectController(app_manager.RyuApp):
                             0,
                             1, dest_ip, inst)
                     datapath.send_msg(req)
-                    continue
-                elif stat.match['arp_tpa'] == '192.168.1.1' and stat.instructions[0].actions[0].port != out_put:
-                    print "SRC ARP 192.168.1.1"
-                    dest_ip = ofp_parser_src.OFPMatch(eth_type=0x806, arp_spa=stat.match['arp_spa'], arp_tpa='192.168.1.1')
-                    actions = [ofp_parser_src.OFPActionOutput(out_put)]
-                    #self.add_flow(src, 32767, dest_ip, actions)
-                    inst = [ofp_parser_src.OFPInstructionActions(ofp_src.OFPIT_APPLY_ACTIONS,
-                        actions)]
+                    
+                    if stat.match['arp_tpa'] == '192.168.1.1' and stat.instructions[0].actions[0].port != out_put:
+                        print "SRC ARP 192.168.1.1"
+                        dest_ip = ofp_parser_src.OFPMatch(eth_type=0x806, arp_spa=stat.match['arp_spa'], arp_tpa='192.168.1.1')
+                        actions = [ofp_parser_src.OFPActionOutput(out_put)]
+                        #self.add_flow(src, 32767, dest_ip, actions)
+                        inst = [ofp_parser_src.OFPInstructionActions(ofp_src.OFPIT_APPLY_ACTIONS,
+                            actions)]
                         
-                    req = ofp_parser_src.OFPFlowMod(datapath, cookie, cookie_mask,
-                            table_id, ofp_src.OFPFC_ADD,
-                            idle_timeout, hard_timeout,
-                            32767, buffer_id_src,
-                            ofp_src.OFPP_ANY, ofp_src.OFPG_ANY,
-                            0,
-                            1, dest_ip, inst)
-                    datapath.send_msg(req)
-
+                        req = ofp_parser_src.OFPFlowMod(datapath, cookie, cookie_mask,
+                                table_id, ofp_src.OFPFC_ADD,
+                                idle_timeout, hard_timeout,
+                                32767, buffer_id_src,
+                                ofp_src.OFPP_ANY, ofp_src.OFPG_ANY,
+                                0,
+                                1, dest_ip, inst)
+                        datapath.send_msg(req)
+                    else: pass
+                else: pass
             #elif stat.match['eth_type'] != 2048:
             #    print "quantas vezes esta linha iaparece"
             else: continue
 
+                
+                
+                
+                
+                
+                
  @set_ev_cls(ofp_event.EventOFPPortStatsReply, MAIN_DISPATCHER)
     def _port_stats_reply_handler(self, ev):
         start_time = time.time()
